@@ -12,6 +12,13 @@ inbox/*
 *.xls
 *.csv
 *.docx
+*.zip
+*.tif
+*.tiff
+*.eml
+*.msg
+*.ofx
+*.qfx
 .env
 *secret*
 *credential*

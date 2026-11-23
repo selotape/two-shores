@@ -467,9 +467,9 @@ function compass(S){const el=$('#compass'),q=compassQ(),at=q&&near()===q.p;
   el.style.left=c.l+cv.offsetLeft+'px';el.style.top=c.t+cv.offsetTop+'px'}
 function labels(){const el=$('#labels'),cw=cv.clientWidth,k=z;let h='';
   const snap=c=>{const c0=Math.floor(c);return c0+Math.round((c-c0)*T)/T},cx=snap(cam.x),cy=snap(cam.y);
-  const put=(x,y,name,cls,pri,id)=>{const sx=(x-cx)*T*k+8*k, sy=(y-cy)*T*k+19*k; if(sx<0||sy<0||sx>cw||sy>cv.clientHeight-4)return;h+=`<span class="lab ${cls}" data-pri="${pri}"${id?` data-p="${id}"`:''} style="left:${sx}px;top:${sy}px">${name}</span>`};
+  const put=(x,y,name,cls,pri,id)=>{const sx=(x-cx)*T*k+8*k, sy=(y-cy)*T*k+19*k; if(sx<0||sy<0||sx>cw||sy>cv.clientHeight-4)return;h+=`<span class="lab ${cls}" data-pri="${pri}"${id?` data-p="${esc(id)}"`:''} style="left:${sx}px;top:${sy}px">${name}</span>`};
   P.forEach(p=>{const st=statusOf(p), u=frame==='today'?urg(p):-1; put(p.x,p.y,esc(p.name),(st==='fog'?'fog ':'')+(u>=0?'you u'+u:''),p===sel?9:u>=0?7-u:3,p.id)});
-  if(frame==='today'){STORMS.forEach(st=>{const s=stormPos(st);put(s.x,s.y+1.6,st.label,'storm',8)});if(WORLD.map.ship)put(WORLD.map.ship.x+.6,WORLD.map.ship.y+.2,esc(WORLD.map.ship.label),'ship',1)}
+  if(frame==='today'){STORMS.forEach(st=>{const s=stormPos(st);put(s.x,s.y+1.6,esc(st.label),'storm',8)});if(WORLD.map.ship)put(WORLD.map.ship.x+.6,WORLD.map.ship.y+.2,esc(WORLD.map.ship.label),'ship',1)}
   PORTS.forEach(pt=>put(pt.x,pt.y,'Airfield','fog',1));
   el.innerHTML=h; el.style.height=cv.clientHeight+'px'; el.style.inset='auto';el.style.left=cv.offsetLeft+'px';el.style.top=cv.offsetTop+'px';el.style.width=cw+'px';
   /* when two labels collide, the less important one hides */
@@ -506,14 +506,14 @@ let lastT=0,tickF=0;function loop(ts){const dt=Math.min(3,lastT?(ts-lastT)/16.66
 
 /* ---------- panels ---------- */
 const CH={you:['you','Your move'],claude:['claude',"Claude's move"],wait:['wait','Waiting'],done:['done','Done']};
-const chip=(t,who)=>`<span class="chip ${CH[t][0]}">${CH[t][1]}${t==='wait'&&who?': '+who:''}</span>`;
+const chip=(t,who)=>`<span class="chip ${CH[t][0]}">${CH[t][1]}${t==='wait'&&who?': '+esc(who):''}</span>`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ST={fog:'In fog',sighted:'Sighted',mapped:'Mapped',decided:'Decided',done:'Done',pillar:'Not a quest'};
 const STWHY={fog:'We do not know this yet, or have not decided it.',sighted:'Known, but no current document confirms it yet.',mapped:'A statement backs this number.',decided:'A dated decision is written down.',done:'In place and running by itself.',pillar:'Visible from everywhere.'};
 function hud(){const qs=allQ(),mine=myMoves(),you=mine.length,done=qs.filter(q=>turnOf(q)==='done').length;
   const dec=P.filter(p=>['decided','done'].includes(statusOf(p))).length, places=P.filter(p=>p.kind!=='pillar').length;
   $('#hud').innerHTML=`<div class="stat ${you?'hot':''}"><b>${you}</b><span>Your moves</span></div>
-   <div class="stat"><b>${frame==='today'?NEXT_CLOCK:'—'}</b><span>Next deadline</span></div>
+   <div class="stat"><b>${frame==='today'?esc(NEXT_CLOCK):'—'}</b><span>Next deadline</span></div>
    <div class="stat"><b>${done} / ${qs.length}</b><span>Quests done</span></div>
    <div class="stat"><b>${dec} / ${places}</b><span>Places decided</span></div>`;$('#moves').textContent=`Your moves (${you})`;
   const nx=$('#next'),cq=compassQ();nx.hidden=!cq;if(cq){nx.textContent=`Next: ${cq.t} →`;nx.title=`${cq.t} · ${cq.clock}`}
@@ -545,7 +545,7 @@ function changesView(r='new'){const cs=inRange(r), when=seenAt?new Date(seenAt).
   if(!cs.length)h+=`<div class="q"><div class="n">Nothing has changed in this period.${newest?` The last change was ${dayName(new Date(newest)).replace(/^(Today|Yesterday)$/,m=>m.toLowerCase())}.`:''}</div></div>`;
   else{h+=`<div class="sum">${summary(cs)}</div>`;let last='';
     cs.forEach(c=>{const d=new Date(c.t),dn=dayName(d);if(dn!==last){h+=`<div class="day">${dn}</div>`;last=dn}
-      h+=`<div class="cm"><div class="why">${d.toLocaleTimeString(LOCALE,{hour:'numeric',minute:'2-digit'})} · ${esc(c.s)}</div>${c.ev.map(e=>`<button class="ev ${e.k}"${e.p&&byId[e.p]?` data-p="${e.p}" title="Walk to ${esc(byId[e.p].name)}"`:''}><span class="chip k-${e.k}">${KIND[e.k][0]}</span><span>${esc(e.txt)}</span></button>`).join('')}</div>`})}
+      h+=`<div class="cm"><div class="why">${d.toLocaleTimeString(LOCALE,{hour:'numeric',minute:'2-digit'})} · ${esc(c.s)}</div>${c.ev.map(e=>`<button class="ev ${e.k}"${e.p&&byId[e.p]?` data-p="${esc(e.p)}" title="Walk to ${esc(byId[e.p].name)}"`:''}><span class="chip k-${e.k}">${KIND[e.k][0]}</span><span>${esc(e.txt)}</span></button>`).join('')}</div>`})}
   h+=`<div class="cap">Each line is a change to a quest, a place or a decision record, found by comparing the repo before and after each change. Nothing here is typed by hand. Click a line to walk to its place.</div></div>`;
   $('#side').innerHTML=h;openSide();
   if(newest&&(!seenAt||newest>seenAt)){try{localStorage.setItem('twoshores-seen',newest)}catch(e){}}
@@ -554,13 +554,13 @@ let seenAtNext='';
 function chgBadge(){const n=unseen().length;$('#chg').innerHTML=`What changed${n?`<b>${n}</b>`:''}`;$('#chg').title=n?`${n} change${n>1?'s':''} since your last look`:'Nothing new since your last look'}
 function listView(){const qs=myMoves(), others=allQ().filter(q=>turnOf(q)!=='you');
   $('#side').innerHTML=`${XBTN}<h2>Your moves</h2><div class="sub">${qs.length?'Most urgent first: anything overdue, then the nearest hard deadline, then the earliest date, then what unblocks the most. The compass on the map points at the top one you have not opened yet. Pick one and you walk there.':'Nothing waits on you.'} ${others.filter(q=>turnOf(q)==='claude').length} more are with Claude, ${others.filter(q=>turnOf(q)==='wait').length} are waiting on someone.</div>
-  <div>${qs.map(q=>`<button class="move" data-p="${q.p.id}"><i>${BANG(Math.min(2,q.tier))}</i><div class="clock${q.late?' late':''}">${esc(q.clock)}</div><div class="t">${esc(q.t)}</div><div class="n">${esc(q.p.name)} · quest ${q.n}${q.why?' · '+esc(q.why):''}</div></button>`).join('')}</div>${LEGEND}
+  <div>${qs.map(q=>`<button class="move" data-p="${esc(q.p.id)}"><i>${BANG(Math.min(2,q.tier))}</i><div class="clock${q.late?' late':''}">${esc(q.clock)}</div><div class="t">${esc(q.t)}</div><div class="n">${esc(q.p.name)} · quest ${q.n}${q.why?' · '+esc(q.why):''}</div></button>`).join('')}</div>${LEGEND}
   <div style="padding:0 14px 16px"><button class="act ghost" data-replay="1">Replay the tips</button><div class="cap">${esc($('h1 small').textContent)}</div></div>`}
 const promptFor=(q,p)=>`Quest ${q.n}: ${q.t} (${p.name}). ${q.due?`Deadline: ${q.clock}. `:''}The map says my next step is: "${q.next}" Tell me where this stands, then walk me through it one decision at a time.`;
 const trim=t=>String(t).replace(/[.?!]+$/,'');
 function questHtml(p,q,i){const t=turnOf(q),live=frame==='today';
   const blk=live?(q.blk||[]).map(n=>{const bp=P.find(x=>x.q.some(y=>y.n===n));if(!bp)return '';const bq=bp.q.find(y=>y.n===n),whose=bq.turn==='you'?'your move':bq.turn==='claude'?"Claude's move":'waiting';
-    return bp===p?`<div class="n">Waits for quest ${n} on this page (${whose}).</div>`:`<div class="row"><button class="act ghost" data-p="${bp.id}">Waits for quest ${n}: ${esc(trim(bq.t))} (${whose}). Walk to ${esc(bp.name)} →</button></div>`}).join(''):'';
+    return bp===p?`<div class="n">Waits for quest ${n} on this page (${whose}).</div>`:`<div class="row"><button class="act ghost" data-p="${esc(bp.id)}">Waits for quest ${n}: ${esc(trim(bq.t))} (${whose}). Walk to ${esc(bp.name)} →</button></div>`}).join(''):'';
   return `<div class="q">${live&&t==='you'?BANG(Math.min(2,q.tier)):''}${chip(t,q.who)}${live&&q.state==='decided'?'<span class="chip done">Decided, not yet carried out</span>':''}<span class="clock${q.late?' late':''}">${live&&t!=='done'?esc(q.clock):''}</span><div class="t">${esc(q.t)} <span class="qn">quest ${q.n}</span></div>${live&&t!=='done'?`<div class="n">${esc(q.next)}</div>`:''}${blk}
     ${live&&t==='you'?`<div class="row"><button class="act" data-copy="${i}">Copy the prompt for Claude</button><button class="act ghost" data-done="${i}">I did my part: copy a note</button><span class="copied" data-flag="${i}" hidden></span></div><div class="cap">Paste it in ${esc(F.thread)}. The map changes after Claude writes the decision down.</div>`:''}</div>`}
 /* the same marks the map shows over a place, for its page and its box */
@@ -576,7 +576,7 @@ function sheetHtml(p){const rs=p.sheet||[];if(!rs.length)return '';const n=k=>rs
   return `<div class="sheet"><div class="hd"><b>When this place is finished</b><span>${tally}</span></div>${rs.map(r=>`<div class="srow sr-${r.st}"><span class="pill ${r.st}">${SHST[r.st]}</span><div><div class="k">${esc(r.k)}</div><div class="v">${esc(r.v)}</div>${r.run?`<div class="n">How it runs: ${esc(r.run)}</div>`:''}${r.check&&r.st!=='inplace'?`<div class="n">Done when: ${esc(r.check)}</div>`:''}${r.why?`<details><summary>Why we chose this</summary>${esc(r.why)}</details>`:''}</div></div>`).join('')}</div>`}
 function cardView(p){const st=statusOf(p);visited.add(p.id);
   const nxt=frame==='today'?myMoves().find(q=>q.p!==p):null;
-  let h=`${XBTN}<div class="card"><div class="row"><button class="act ghost" data-back="1">Your moves</button>${nxt?`<button class="act ghost" data-p="${nxt.p.id}">Next move: ${esc(trim(nxt.t))} →</button>`:''}</div>
+  let h=`${XBTN}<div class="card"><div class="row"><button class="act ghost" data-back="1">Your moves</button>${nxt?`<button class="act ghost" data-p="${esc(nxt.p.id)}">Next move: ${esc(trim(nxt.t))} →</button>`:''}</div>
    <div><div class="kind">${esc(LANDS[p.land]?.name||'On the horizon')} · ${ST[st]}</div><h3>${esc(p.name)}${marks(p)}</h3><div style="color:var(--muted)">${esc(p.what)}</div></div>${changedBox(p)}${learnHtml(p)}${sheetHtml(p)}`;
   const facts=`<dl class="facts"><dt>${/[$₪]/.test(p.val)?'Value':'Today'}</dt><dd>${esc(p.val)}</dd>${p.asof?`<dt>As of</dt><dd>${esc(p.asof)}</dd>`:''}${/^quests? [\d ,and]+$/i.test(p.src)?'':`<dt>Source</dt><dd>${esc(p.src)}</dd>`}<dt>Status</dt><dd>${ST[st]}. ${p.note&&st===p.base?esc(p.note):STWHY[st]}</dd></dl>`;
   if(!p.sheet||!p.sheet.length)h+=facts;
@@ -586,7 +586,7 @@ function cardView(p){const st=statusOf(p);visited.add(p.id);
   p.q.forEach((q,i)=>{h+=questHtml(p,q,i)});
   if(p.sheet&&p.sheet.length)h+=`<h4 class="sec">The record</h4>${facts}`;
   if(!p.q.length&&p.kind!=='pillar')h+=`<div class="q"><div class="n">No open quest here.</div></div>`;
-  if(sampleFn)h+=`<div class="row"><button class="act ghost" data-ask="${p.id}">Ask Claude about ${esc(p.name)}</button></div>`;
+  if(sampleFn)h+=`<div class="row"><button class="act ghost" data-ask="${esc(p.id)}">Ask Claude about ${esc(p.name)}</button></div>`;
   if(p.quiz)h+=`<div class="q quiz"><div class="kind">Test yourself</div><div class="t">${esc(p.quiz.ask)}</div>${p.quiz.opts.map((o,i)=>`<button data-a="${i}">${esc(o)}</button>`).join('')}<div class="n" data-why="1" hidden>${esc(p.quiz.why)}</div></div>`;
   $('#side').innerHTML=h+'</div>';openSide()}
 /* dialog box on the map: the first thing you see when you reach or tap a place */
@@ -603,17 +603,17 @@ function say(who,text,next){ $('#dlg').innerHTML=`<button class="x" data-close="
 const stormPos=st=>{const p=byId[st.at],d=Math.min(11,Math.max(st.min||2,2+st.days/4));return {x:p.x+st.dx*d,y:p.y+st.dy*d}};
 function stormView(st){const qs=allQ().filter(q=>q.due&&q.due<=st.date&&q.state==='open').sort((a,b)=>a.due.localeCompare(b.due)||a.n-b.n);
   $('#side').innerHTML=`${XBTN}<div class="card"><div><div class="kind">Storm · a hard deadline</div><h3>${esc(st.label)}</h3><div style="color:var(--muted)">${qs.length?`${qs.length} quest${qs.length>1?'s':''} due by then ${qs.length>1?'are':'is'} not decided yet. ${qs.filter(q=>turnOf(q)==='you').length} of them are your move.`:'Nothing due by then is still open.'}</div></div>
-  ${qs.map(q=>`<div class="q">${chip(turnOf(q),q.who)}<span class="clock${q.late?' late':''}">${esc(q.clock)}</span><div class="t">${esc(q.t)} <span class="qn">quest ${q.n}</span></div>${q.why?`<div class="n">${esc(q.why)}</div>`:''}<div class="n">${esc(q.next)}</div><div class="row"><button class="act ghost" data-p="${q.p.id}">Walk to ${esc(q.p.name)} →</button></div></div>`).join('')}</div>`;openSide()}
+  ${qs.map(q=>`<div class="q">${chip(turnOf(q),q.who)}<span class="clock${q.late?' late':''}">${esc(q.clock)}</span><div class="t">${esc(q.t)} <span class="qn">quest ${q.n}</span></div>${q.why?`<div class="n">${esc(q.why)}</div>`:''}<div class="n">${esc(q.next)}</div><div class="row"><button class="act ghost" data-p="${esc(q.p.id)}">Walk to ${esc(q.p.name)} →</button></div></div>`).join('')}</div>`;openSide()}
 const pct=f=>f<.01?(f*100).toFixed(1)+'%':Math.round(f*100)+'%';
 function blimpView(){ sel=null;labels();
   /* from world.json until the ledger feeds it: assets and debts as [name, value in thousands, shown value, colour] */
   const B=WORLD.blimp||{}, A=B.assets||[], D=B.debts||[];
   const tot=A.reduce((t,a)=>t+a[1],0),C=2*Math.PI*38;let off=0;
   const arcs=A.map(a=>{const len=a[1]/tot*C,d=Math.max(.8,len-2),o=off;off+=len;
-    return `<circle r="38" fill="none" stroke="${a[3]}" stroke-width="18" stroke-dasharray="${d.toFixed(1)} ${(C-d).toFixed(1)}" stroke-dashoffset="${(-o).toFixed(1)}"><title>${a[0]}: ${a[2]} (${pct(a[1]/tot)})</title></circle>`}).join('');
+    return `<circle r="38" fill="none" stroke="${esc(a[3])}" stroke-width="18" stroke-dasharray="${d.toFixed(1)} ${(C-d).toFixed(1)}" stroke-dashoffset="${(-o).toFixed(1)}"><title>${esc(a[0])}: ${esc(a[2])} (${pct(a[1]/tot)})</title></circle>`}).join('');
   const rows=frame!=='today'?'<div class="dl-next">Preview frame: the blimp shows real numbers only on Today.</div>':`<div class="pie">
    <svg viewBox="-50 -50 100 100" role="img" aria-label="Where the assets are"><g transform="rotate(-90)">${arcs}</g></svg>
-   <ul>${A.map(a=>`<li><i style="background:${a[3]}"></i><span>${a[0]}</span><b>${pct(a[1]/tot)}</b><em>${a[2]}</em></li>`).join('')}</ul></div>
+   <ul>${A.map(a=>`<li><i style="background:${esc(a[3])}"></i><span>${esc(a[0])}</span><b>${pct(a[1]/tot)}</b><em>${esc(a[2])}</em></li>`).join('')}</ul></div>
    <dl class="facts"><dt>Debts</dt><dd>${D.length?D.map(d=>`${esc(d[0])}: ${esc(d[2])}`).join('; '):'none'}</dd>${(B.facts||[]).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}<dt>Statements</dt><dd>${P.filter(p=>p.acct!==false&&['town','city','vault','fortress','bank','shrine','cellar'].includes(p.kind)&&p.base==='mapped').length} of ${P.filter(p=>p.acct!==false&&['town','city','vault','fortress','bank','shrine','cellar'].includes(p.kind)).length} accounts are backed by a statement</dd></dl>
    ${B.note?`<div class="dl-next">${esc(B.note)}</div>`:''}`;
   $('#side').innerHTML=`${XBTN}<div class="card"><div><div class="kind">From the blimp · net worth: what you own minus what you owe</div><h3>${frame==='today'&&B.title?esc(B.title):'Net worth'}</h3></div>${rows}</div>
