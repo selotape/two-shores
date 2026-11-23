@@ -1,0 +1,19 @@
+# Facts only. Original documents and full ID or account numbers never go to GitHub.
+raw/
+private/
+inbox/*
+*.pdf
+*.PDF
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.xlsx
+*.xls
+*.csv
+*.docx
+.env
+*secret*
+*credential*
+game/dist/
+__pycache__/

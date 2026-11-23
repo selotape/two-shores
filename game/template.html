@@ -1,0 +1,785 @@
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/*__FONTS__*/</style>
+<style>
+/* names may be in any script: a Hebrew or Arabic name reads right to left in its own box */
+.lab,h3,.t,.k,.v,#open,#compass,#next,.dl-top b,.pie li span,.ev{unicode-bidi:plaintext}
+/* Layout: one screen. A slim bar on top, then the map fills the box; text pages open over the whole map. Single dark look by choice: it is a night-sea game screen. */
+:root{
+  color-scheme:dark;
+  --ink:#0b1722; --panel:#12222e; --panel2:#182c3a; --line:#27404f;
+  --text:#e9eff3; --muted:#93a7b4;
+  --you:#ff7a59; --claude:#4fd1c5; --wait:#e2b24c; --gold:#f2c14e; --done:#7bd389;
+  --display:"Pixelify Sans","Courier New",monospace;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45;
+  margin:0;padding:0;overflow:hidden}
+/* one screen: a slim bar, then the map fills everything; text opens over the whole map */
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));flex:none}
+h1{font-family:var(--display);font-weight:700;font-size:20px;line-height:1;margin:0;letter-spacing:.5px}
+h1 small{display:none}
+.frames{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px}
+.frames{margin-left:auto}
+.frames button{font:500 12px var(--body);color:var(--muted);background:none;border:0;border-radius:6px;padding:4px 8px;cursor:pointer}
+.frames button[aria-pressed="true"]{background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+button:focus-visible,.move:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hud{display:flex;flex-wrap:wrap;gap:2px 16px;min-width:0}
+.stat{min-width:0;display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.stat b{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat.hot b{color:var(--you)}
+.note{font-size:12px;color:var(--ink);background:var(--gold);border-radius:6px;padding:6px 10px;font-weight:500}
+main{flex:1;min-height:0;position:relative}
+.stage{position:absolute;inset:0;border-top:1px solid var(--line);overflow:hidden;background:#0d3049;min-width:0}
+canvas:focus{outline:none}
+canvas{display:block;image-rendering:pixelated;cursor:pointer;touch-action:none}
+.labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,0);font:500 10px var(--body);white-space:nowrap;color:var(--text);
+  background:rgba(8,18,26,.78);padding:1px 5px;border-radius:3px}
+.lab.storm{background:#1b2030;color:#ffd9cf;box-shadow:0 0 0 1px var(--you)}
+.lab.ship{color:var(--done)}
+.lab.fog{color:var(--muted);font-style:italic}
+.lab.u1::before{background:#f59a2f!important}.lab.u2::before{background:#d9cfae!important}.lab.u0::before{background:#ff4332!important}
+.lab.you::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--you);margin-right:4px}
+.stagebar{position:absolute;left:max(8px,env(safe-area-inset-left,0px));top:8px;display:flex;gap:6px}
+.dlg{position:absolute;left:8px;right:8px;bottom:64px;z-index:3;background:#0a141e;border:2px solid var(--text);border-radius:6px;box-shadow:0 0 0 2px var(--ink),0 8px 24px rgba(0,0,0,.5);padding:10px 12px;display:flex;flex-direction:column;gap:5px;max-width:560px;margin:0 auto}
+.dlg.guide{border-color:var(--gold)}
+.dlg .x{position:absolute;right:6px;top:4px;background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:4px 8px}
+.dl-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding-right:26px}
+.dl-top b{font-family:var(--display);font-size:17px;font-weight:700}.dl-top b .mk{margin:0 0 0 6px}
+.dl-what{color:var(--muted);font-size:12.5px}
+.dl-val{font:500 13px var(--mono)}.dl-val span{color:var(--muted);font-size:11px}
+.dl-q{font-weight:600;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.dl-next,.dl-say{font-size:13px;color:var(--text)}.dl-next{color:var(--muted)}
+.dlg .facts{font-size:12.5px}
+.pie{display:flex;gap:12px;align-items:center}.pie svg{width:96px;height:96px;flex:none}
+.pie ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:12.5px;min-width:0;flex:1}
+.pie li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:0 6px;align-items:baseline}
+.pie i{width:10px;height:10px;border-radius:2px}.pie b{font:500 12px var(--mono)}
+.pie em{grid-column:2/4;font:normal 11px var(--mono);color:var(--muted)}
+.dl-hint{font-size:12.5px;border-left:3px solid var(--gold);padding-left:8px;margin-top:4px}
+.dlg .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.st{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-radius:3px;padding:1px 6px;background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.st-fog{background:#56606a}.st-mapped{background:#3f8350}.st-decided,.st-guide{background:var(--gold);color:#2a1e02}.st-done{background:var(--done);color:#062a10}
+.dlg:not([hidden])~.dpad{display:none}
+.stagebar button,.dpad button{font:500 11px var(--body);color:var(--text);background:rgba(8,18,26,.82);border:1px solid var(--line);border-radius:6px;padding:5px 8px;cursor:pointer}
+.dpad{position:absolute;right:max(8px,env(safe-area-inset-right,0px));bottom:max(8px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(2,34px);gap:3px}
+.dpad button{padding:0;font-size:14px}
+.dpad .u{grid-column:2}.dpad .l{grid-column:1;grid-row:2}.dpad .d{grid-column:2;grid-row:2}.dpad .r{grid-column:3;grid-row:2}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--muted);padding:8px 2px}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border-radius:2px}
+/* a page is a big window floating over the map: the map stays visible, dimmed, around its edges, and a click there goes back */
+aside{position:absolute;inset:max(10px,2.5%);z-index:6;overflow:auto;background:rgba(18,34,46,.97);display:flex;flex-direction:column;align-items:center;
+  border:2px solid var(--text);border-radius:8px;box-shadow:0 0 0 2px var(--ink),0 14px 44px rgba(0,0,0,.65)}
+#veil{position:absolute;inset:0;z-index:5;background:rgba(4,10,18,.5);cursor:pointer}
+@media (max-width:560px){aside{inset:6px}}
+aside[hidden]{display:none}
+aside>*{width:100%;max-width:760px}
+aside:focus{outline:none}
+aside .bar{position:sticky;top:0;z-index:2;max-width:none;display:flex;justify-content:flex-end;padding:8px 14px;background:#12222e;border-bottom:1px solid var(--line);border-radius:6px 6px 0 0}
+aside .x{font:600 12px var(--body);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+#kbd{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:4;font:500 12px var(--body);background:rgba(8,18,26,.9);color:var(--text);border:1px solid var(--gold);border-radius:6px;padding:5px 10px;pointer-events:none}
+#compass{position:absolute;z-index:3;max-width:min(260px,48%);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px var(--body);background:#1a1410;color:#f2c14e;border:1px solid #f2c14e;border-radius:5px;padding:4px 8px;cursor:pointer}
+#open{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:4;font:600 13px var(--body);background:var(--gold);color:#2a1e02;border:2px solid #2a1e02;border-radius:6px;padding:8px 14px;cursor:pointer;max-width:calc(100% - 140px)}
+#next{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lab[data-p]{pointer-events:auto;cursor:pointer}
+.move{display:grid!important;grid-template-columns:12px minmax(0,1fr);gap:0 8px}.move i{margin-top:2px;grid-row:1/4}.move i .mk{margin:0}.move>div{grid-column:2}
+.clock.late{color:#ff8a7a}
+.mk{display:inline-block;width:8px;height:14px;vertical-align:-2px;margin-right:5px;image-rendering:pixelated}.mk.plus{width:10px;height:10px;vertical-align:0}
+h3 .mk{width:10px;height:18px;margin:0 0 0 8px;vertical-align:-1px}h3 .mk.plus{width:13px;height:13px;vertical-align:1px}
+.chg{border:1px solid var(--gold);border-radius:6px;padding:8px 10px;background:rgba(242,193,78,.07)}.chg .kind{color:var(--gold)}
+.cap{font-size:11.5px;color:var(--muted);margin-top:6px}
+.fly{position:sticky;bottom:6px;height:44px;pointer-events:none;overflow:hidden;max-width:none!important}
+.fly svg{position:absolute;left:0;bottom:4px;width:66px;height:36px;image-rendering:pixelated;animation:fly 26s linear infinite}
+@keyframes fly{from{transform:translateX(-80px)}to{transform:translateX(100vw)}}
+@media (prefers-reduced-motion:reduce){.fly svg{animation:none;left:auto;right:16px}}
+#chg b{display:inline-block;min-width:16px;margin-left:5px;padding:0 4px;border-radius:8px;background:var(--gold);color:#2a1e02;font:600 10.5px/16px var(--body);text-align:center}
+.ranges{display:flex;flex-wrap:wrap;gap:6px}.ranges button[aria-pressed="true"]{background:var(--panel2);box-shadow:inset 0 0 0 1px var(--gold)}
+.sum{font-size:13.5px}.sum b{color:var(--gold);font-weight:600}
+.day{font:600 11px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.cm{border-left:2px solid var(--line);padding:2px 0 2px 10px;display:flex;flex-direction:column;gap:3px}
+.cm .why{font-size:11.5px;color:var(--muted)}
+.ev{display:flex;gap:8px;align-items:baseline;text-align:left;width:100%;background:none;border:0;color:var(--text);font:13px var(--body);padding:3px 0;cursor:default}
+.ev[data-p]{cursor:pointer}.ev[data-p]:hover span:last-child{text-decoration:underline}
+.ev .chip{flex:none;min-width:96px;text-align:center}.ev.work{color:var(--muted)}
+.chip.k-decided,.chip.k-record{background:var(--gold);color:#2a1e02}.chip.k-done,.chip.k-place{background:var(--done);color:#062a10}
+.chip.k-off{background:var(--claude);color:#04302c}.chip.k-yours{background:var(--you);color:#2b0d04}.chip.k-fact{background:#7fb2e5;color:#0b2238}
+.chip.k-new,.chip.k-reopened,.chip.k-placedown,.chip.k-work{background:var(--panel);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+#moves{background:var(--gold);color:#2a1e02;border-color:var(--gold);font-weight:600}
+.stagebar{flex-wrap:wrap;right:max(8px,env(safe-area-inset-right,0px))}
+aside h2{font-family:var(--display);font-weight:500;font-size:17px;margin:0;padding:12px 14px 2px}
+aside .sub{color:var(--muted);font-size:12px;padding:0 14px 10px;border-bottom:1px solid var(--line)}
+.move{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;padding:10px 14px;cursor:pointer}
+.move:hover{background:var(--panel2)}
+.move .t{font-weight:600}
+.move .n{color:var(--muted);font-size:12.5px;margin-top:2px}
+.clock{font:500 11px var(--mono);color:var(--gold)}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border-radius:3px;padding:1px 6px;margin-right:6px}
+.chip.you{background:var(--you);color:#2b0d04}.chip.claude{background:var(--claude);color:#04302c}.chip.wait{background:var(--wait);color:#2e2204}.chip.done{background:var(--done);color:#062a10}
+.card{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.card .kind{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.card h3{font-family:var(--display);font-weight:700;font-size:21px;margin:0;line-height:1.1}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 12px;font-size:12.5px}
+.facts dt{color:var(--muted)}.facts dd{margin:0;font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.q{border:1px solid var(--line);border-radius:6px;padding:9px 10px;background:var(--panel2)}
+.q .t{font-weight:600;margin:4px 0 2px}
+.q .n{font-size:12.5px;color:var(--muted)}
+.q .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.act{font:600 12px var(--body);border:0;border-radius:5px;padding:6px 10px;cursor:pointer;background:var(--gold);color:#2a1e02}
+.act.ghost{background:none;color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.copied{font-size:11.5px;color:var(--done)}
+#ask{display:none}#ask.on{display:inline-block}
+.askbox{display:flex;flex-direction:column;gap:8px}
+.askbox textarea{width:100%;min-height:64px;resize:vertical;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:6px;font:14px var(--body);padding:8px}
+.turn{border-radius:6px;padding:9px 11px;line-height:1.5;font-size:14px}
+.turn.you{background:none;box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.turn.cl{background:var(--panel2);border:1px solid var(--line)}
+.turn.cl p{margin:0 0 8px}.turn.cl p:last-child{margin:0}.turn.cl ul{margin:0 0 8px;padding-left:20px}
+.turn .who{font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+/* a place's finished state: one row per thing it will hold, each In place, Decided or Open */
+.learn{border-left:3px solid var(--gold);padding:2px 0 2px 12px;line-height:1.55;font-size:14px}.learn p{margin:0 0 6px}.learn p:last-child{margin:0}
+.sheet{border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
+.sheet .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px 11px;border-bottom:1px solid var(--line)}
+.sheet .hd b{font:600 13px var(--body)}.sheet .hd span{color:var(--muted);font-size:12px}
+.srow{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:9px 11px;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}
+.sheet .hd+.srow{border-top:0}.srow .k{font-weight:600}.srow.sr-open .v{color:var(--muted)}
+.srow .n{color:var(--muted);font-size:12.5px;margin-top:3px}
+.srow details{margin-top:4px;font-size:12.5px;color:var(--muted)}.srow summary{cursor:pointer;color:var(--text)}
+.pill{align-self:start;justify-self:start;font:600 11px var(--body);border-radius:10px;padding:2px 8px;white-space:nowrap}
+.pill.inplace{background:#2f6b45;color:#e6f6ea}.pill.decided{background:#6b5520;color:#fbefcf}.pill.open{box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.qn{color:var(--muted);font-weight:400;font-size:12px}
+h4.sec{margin:6px 0 0;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:560px){.srow{grid-template-columns:1fr;gap:4px}}
+textarea.fallback{width:100%;margin-top:6px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:5px;font:12px var(--mono);padding:6px}
+.quiz button{display:block;width:100%;text-align:left;margin-top:5px;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 8px;font:13px var(--body);cursor:pointer}
+.quiz button.right{border-color:var(--done);color:var(--done)}.quiz button.wrong{border-color:var(--you);color:var(--you)}
+.back{align-self:flex-start}
+@media (max-width:1100px){.hud{order:3;width:100%;gap:2px 12px}}
+@media (max-width:860px){#next{display:none}}
+@media (max-height:420px){.hud{display:none}}
+@media (max-height:520px){.dlg{bottom:auto;top:52px}}
+@media (max-width:560px){.stat:nth-child(n+3){display:none}}
+@media (pointer:coarse){.stagebar button{min-height:40px;min-width:40px;padding:8px 12px;font-size:13px}.frames button{padding:9px 10px}
+  .dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,48px);gap:4px}.dpad button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  .act,.dlg .x,aside .x{min-height:40px}button{touch-action:manipulation}
+  #open{left:8px;right:auto;transform:none;max-width:calc(100% - 180px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:44px}}
+@media (hover:hover) and (pointer:fine){.dpad{display:none}}
+</style>
+
+<div class="app">
+  <header>
+    <h1>__TITLE__<small>__SUBTITLE__</small></h1>
+    <div class="hud" id="hud"></div>
+    <div class="frames" role="group" aria-label="Preview a point in time">
+      <button id="f-today" aria-pressed="true">Today</button>
+      <button id="f-sprint" aria-pressed="false">All decided</button>
+      <button id="f-end" aria-pressed="false">All done</button>
+    </div>
+  </header>
+  <div class="note" id="note" hidden></div>
+  <main>
+    <div>
+      <div class="stage" id="stage">
+        <canvas id="cv" tabindex="0" width="576" height="352" aria-label="Game map. Use arrow keys or tap to walk."></canvas>
+        <div class="labels" id="labels"></div><button id="compass" hidden></button>
+        <div class="stagebar"><button id="moves">Your moves</button><button id="chg">What changed</button><button id="ask">Ask Claude</button><button id="next" hidden></button><button id="zout" aria-label="Zoom out">−</button><button id="zin" aria-label="Zoom in">+</button><button id="zoom">Whole map</button><button id="blimp">Blimp view</button></div>
+        <div class="dlg" id="dlg" hidden></div>
+        <button id="open" hidden></button>
+        <div id="kbd" hidden>Click the map to use the keyboard</div>
+        <div id="veil" hidden></div><aside id="side" tabindex="-1" hidden></aside>
+        <div class="dpad" aria-label="Move">
+          <button class="u" data-d="0,-1" aria-label="Up">▲</button><button class="l" data-d="-1,0" aria-label="Left">◀</button>
+          <button class="d" data-d="0,1" aria-label="Down">▼</button><button class="r" data-d="1,0" aria-label="Right">▶</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(()=>{
+const T=16;
+const $=s=>document.querySelector(s);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/*__DATA__*/
+const W=WORLD.map.w, H=WORLD.map.h, F=WORLD.family, LANDS=Object.fromEntries(WORLD.lands.map(l=>[l.id,l])), PORTS=WORLD.map.ports||[];
+/* two ports: a shipping lane and a flight between them */
+const PORT_A=PORTS.length===2?PORTS[0]:null, PORT_B=PORTS.length===2?PORTS[1]:null;
+const SPR={
+ home:[['#8a5a3a',6,16,20,12],['#c0503c',4,10,24,7],['#c0503c',8,6,16,5],['#f3e3b0',10,19,5,5],['#5b3a22',19,20,5,8]],
+ town:[['#c9b48a',3,16,11,12],['#7c5a8a',2,12,13,5],['#d9c7a0',16,13,13,15],['#3f7f8c',15,8,15,6],['#5b3a22',20,21,5,7],['#f3e3b0',6,19,4,4]],
+ city:[['#8fa3b8',3,12,7,16],['#a9bccf',11,5,8,23],['#7f93a8',20,9,9,19],['#f2e7a8',13,8,2,2],['#f2e7a8',16,8,2,2],['#f2e7a8',13,13,2,2],['#f2e7a8',16,13,2,2],['#f2e7a8',22,13,2,2],['#f2e7a8',25,13,2,2],['#f2e7a8',5,16,2,2],['#f2e7a8',22,19,2,2]],
+ fortress:[['#9a9488',4,12,24,16],['#b3ad9f',2,7,7,21],['#b3ad9f',23,7,7,21],['#b3ad9f',12,4,8,10],['#4b3a2a',13,20,6,8],['#c0503c',15,0,5,3],['#5b3a22',14,0,1,5]],
+ vault:[['#8c8f99',5,10,22,18],['#a7abb6',3,7,26,4],['#565a66',11,14,10,11],['#f2c14e',14,18,4,4],['#3a3d47',3,26,26,2]],
+ light:[['#e8e2d0',12,8,8,20],['#c0503c',12,13,8,4],['#c0503c',12,21,8,4],['#30343c',10,4,12,5],['#f7e27a',13,5,6,3],['#7a7466',8,27,16,3]],
+ wall:[['#9a9488',2,14,28,12],['#b3ad9f',2,10,5,4],['#b3ad9f',10,10,5,4],['#b3ad9f',18,10,5,4],['#b3ad9f',26,10,4,4],['#857f73',2,19,28,1],['#857f73',9,14,1,5],['#857f73',20,14,1,5],['#857f73',14,20,1,6]],
+ harbour:[['#8a5a3a',2,20,28,3],['#6b4329',5,23,2,6],['#6b4329',14,23,2,6],['#6b4329',24,23,2,6],['#e8e2d0',15,6,9,10],['#5b3a22',14,4,1,15],['#a0643c',9,16,16,4]],
+ well:[['#9a9488',8,16,16,10],['#3f7fa8',11,18,10,4],['#5b3a22',8,7,2,10],['#5b3a22',22,7,2,10],['#c0503c',6,4,20,4]],
+ shrine:[['#d9d2bf',8,12,16,16],['#7c5a8a',5,7,22,6],['#7c5a8a',10,3,12,5],['#f2c14e',14,17,4,7],['#f2c14e',12,19,8,2]],
+ gate:[['#b3ad9f',3,8,7,20],['#b3ad9f',22,8,7,20],['#9a9488',3,5,26,5],['#4fd1c5',10,12,12,3],['#f2c14e',13,6,6,3]],
+ orchard:[['#2f7d4a',3,8,11,10],['#2f7d4a',17,10,11,10],['#5a4028',7,18,3,8],['#5a4028',21,20,3,7],['#f2c14e',6,11,2,2],['#f2c14e',10,14,2,2],['#f2c14e',20,13,2,2],['#f2c14e',24,16,2,2]],
+ post:[['#5b3a22',15,8,2,20],['#d9c7a0',6,6,20,9],['#3a3d47',9,9,14,1],['#3a3d47',9,12,9,1]],
+ bank:[['#d9d2bf',5,13,22,15],['#b9b2a0',3,9,26,5],['#b9b2a0',9,5,14,5],['#8c8676',8,15,3,11],['#8c8676',15,15,3,11],['#8c8676',22,15,3,11]],
+ cellar:[['#6b4329',6,14,20,14],['#4b2e1b',10,18,12,10],['#9a9488',4,11,24,4],['#f2c14e',15,22,2,3]],
+ farm:[['#c0503c',6,12,14,14],['#e8e2d0',10,18,6,8],['#8a2f22',4,8,18,5],['#d8c38b',22,18,8,8],['#b79463',22,21,8,1]],
+ pillar:[['#05050a',10,0,12,30],['#1b1b2a',12,2,2,26],['#05050a',6,26,20,5]],
+};
+/* ---------- terrain ---------- */
+const rnd=(x,y)=>{let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n)};
+const sm=t=>t*t*(3-2*t);
+function noise(x,y,s){const X=Math.floor(x/s),Y=Math.floor(y/s),fx=sm(x/s-X),fy=sm(y/s-Y);
+  const a=rnd(X,Y),b=rnd(X+1,Y),c=rnd(X,Y+1),d=rnd(X+1,Y+1);return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}
+const BRIDGE=14,SEA=0,SHORE=1,SAND=2,GRASS=3,WOOD=4,ROAD=5,LANE=6,ROCK=7,OLIVE=8,MOUNT=9,RIVER=10,DESERT=11,PALM=12,FIELD=13;
+const map=new Uint8Array(W*H), depth=new Uint8Array(W*H);
+const at=(x,y)=>(x<0||y<0||x>=W||y>=H)?SEA:map[y*W+x], set=(x,y,v)=>{if(x>=0&&y>=0&&x<W&&y<H)map[y*W+x]=v};
+const ell=(x,y,cx,cy,rx,ry)=>{const dx=(x-cx)/rx,dy=(y-cy)/ry;return dx*dx+dy*dy};
+/* each land is a few ellipses [cx, cy, rx, ry, roughness] of its own ground; later lands draw over earlier ones */
+const LOCALE=F.locale||'en-US';
+const GROUND={grass:GRASS,olive:OLIVE,desert:DESERT,field:FIELD};
+const groundOf=(l,y)=>GROUND[l.south&&y>=l.south.from?l.south.ground:l.ground]||GRASS;
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const j=(noise(x,y,3)-.5)*.34; let v=SEA;
+  WORLD.lands.forEach((l,i)=>{ if(l.shapes.some(([cx,cy,rx,ry,r])=>ell(x,y,cx,cy,rx,ry)+j*(r??1)<1)) v=groundOf(l,y);
+    /* places marked g pull their first land's ground out to them */
+    if(i===0&&P.some(p=>p.g&&ell(x,y,p.x,p.y+.3,2.4,2.1)+j*.6<1)) v=groundOf(l,y); });
+  set(x,y,v);
+}
+const N4=[[1,0],[-1,0],[0,1],[0,-1]], N8=[...N4,[1,1],[-1,-1],[1,-1],[-1,1]];
+P.forEach(p=>{for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){ if(p.kind==='pillar')set(p.x+dx,p.y+dy,ROCK); else if(at(p.x+dx,p.y+dy)===SEA) set(p.x+dx,p.y+dy,LANDS[p.land]?groundOf(LANDS[p.land],-1):GRASS);}});
+/* which land a tile belongs to: the nearest land you can reach, by its shapes; its ground sets the dry palette */
+const LANDI=[];const landAt=(x,y)=>{const k=y*W+x; if(LANDI[k]!==undefined)return LANDI[k]; let best=null,bd=1e9;
+  WORLD.lands.forEach(l=>{ if(l.reach===false)return; l.shapes.forEach(([cx,cy,rx,ry])=>{const d=ell(x,y,cx,cy,rx,ry); if(d<bd){bd=d;best=l}})}); return LANDI[k]=best};
+const dryAt=(x,y)=>{const l=landAt(x,y); return !!l&&groundOf(l,y)!==GRASS};
+const pinesAt=(x,y)=>{const p=landAt(x,y)?.pines; return !!p&&x>=p[0]&&y>=p[1]&&x<p[2]&&y<p[3]};
+const isLand=v=>v!==SEA&&v!==SHORE&&v!==LANE&&v!==ROCK&&v!==BRIDGE;
+function road(a,b){let x=a.x,y=a.y;const put=()=>{const v=at(x,y);if(v!==ROCK)set(x,y,(v===SEA||v===BRIDGE)?BRIDGE:ROAD)};put();while(x!==b.x){x+=Math.sign(b.x-x);put()}while(y!==b.y){y+=Math.sign(b.y-y);put()}}
+ROADS.forEach(([a,b])=>road(a,b));
+if(PORT_A)for(let x=PORT_A.x+1;x<PORT_B.x;x++)set(x,PORT_A.y,LANE);
+const nearPlace=(x,y,r)=>P.some(p=>Math.abs(p.x-x)<=r&&Math.abs(p.y-y)<=r);
+const nearRoad=(x,y)=>N8.some(([a,b])=>at(x+a,y+b)===ROAD);
+// river: from the given spring down to the coast
+if(WORLD.map.river){let [x,y]=WORLD.map.river;for(;y<H;y++){ if(at(x,y)===SEA)break; if(at(x,y)!==ROAD&&!nearPlace(x,y,0))set(x,y,RIVER); const d=noise(x,y,2)>.55?1:noise(x+9,y,2)<.4?-1:0; if(d&&at(x+d,y)!==SEA&&at(x+d,y)!==ROAD&&!nearPlace(x+d,y,0)){x+=d; if(at(x,y)!==ROAD)set(x,y,RIVER)} }}
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=at(x,y);
+  if(v===GRASS||v===OLIVE||v===DESERT){
+    const coast=N4.some(([a,b])=>{const n=at(x+a,y+b);return n===SEA||n===LANE});
+    if(coast){set(x,y,SAND);continue}
+    if(nearPlace(x,y,1)||nearRoad(x,y))continue;
+    const n=noise(x+40,y+7,4), m=noise(x,y,5);
+    if(v===GRASS){ if(m>.66&&y<(WORLD.lands[0].mountains_above??H))set(x,y,MOUNT); else if(n>.52)set(x,y,WOOD); }
+    else if(v===OLIVE){ if(m>.72)set(x,y,MOUNT); else if(n>.6)set(x,y,WOOD); }
+    else if(v===DESERT){ if(n>.7)set(x,y,PALM); }
+  }}
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(at(x,y)===SEA&&N8.some(([a,b])=>isLand(at(x+a,y+b))))set(x,y,SHORE)}
+// distance from land, for water shading
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){let d=5;for(let r=1;r<5&&d===5;r++)for(let dy=-r;dy<=r&&d===5;dy++)for(let dx=-r;dx<=r;dx++)if(isLand(at(x+dx,y+dy))){d=r;break}depth[y*W+x]=d}
+const walk=(x,y)=>{const v=at(x,y);return v===ROAD||v===LANE||v===BRIDGE};
+
+/* ---------- state ---------- */
+let frame='today', hero={x:WORLD.map.start[0],y:WORLD.map.start[1],px:WORLD.map.start[0],py:WORLD.map.start[1],path:[],dir:1,up:false}, sel=null, whole=false, tick=0;
+const statusOf=p=>{ if(p.status==='pillar')return 'pillar';
+  if(frame==='today')return p.status;
+  if(frame==='sprint')return p.sprint||'decided';
+  return 'done'; };
+/* urgency of a place = its most urgent quest that is the player's move: 0 nearest deadline, 1 this year, 2 later */
+const URG=['#ff4332','#f59a2f','#d9cfae'],urg=p=>{const t=p.q.filter(q=>q.turn==='you').map(q=>q.tier);return t.length?Math.min(2,Math.min(...t)):-1};
+/* the map's own pixel marks, reused on the pages: ! = your move (colour = urgency), + = changed since your last look */
+const BANG=u=>`<svg class="mk" viewBox="0 0 8 14" aria-hidden="true" shape-rendering="crispEdges"><rect width="8" height="14" fill="#1a1410"/><g fill="${URG[u]}"><rect x="1" y="1" width="6" height="7"/><rect x="2" y="8" width="4" height="1"/><rect x="2" y="10" width="4" height="3"/></g></svg>`;
+const PLUS='<svg class="mk plus" viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><g fill="#f2c14e"><rect x="3" width="2" height="8"/><rect y="3" width="8" height="2"/></g><rect x="3" y="3" width="2" height="2" fill="#fff"/></svg>';
+const URGW=['most urgent','this year','later'];
+const LEGEND=`<div class="legend" style="padding:12px 14px"><span>${BANG(0)} most urgent</span><span>${BANG(1)} this year</span><span>${BANG(2)} later</span><span>${PLUS} changed, not yet seen</span>          <span><i style="background:#56606a"></i>Fog: not known or not decided</span>          <span><i style="background:#8fb39a"></i>Sighted: known, not yet confirmed</span>          <span><i style="background:#4f9a5c"></i>Mapped: backed by a statement</span>          <span><i style="background:var(--gold)"></i>Decided: dated decision written</span>          <span><i style="background:var(--done)"></i>Done: in place</span></div>`, XBTN='<div class="bar"><button class="x" data-closeside="1">× Back to the map (Esc)</button></div>';
+const COARSE=matchMedia('(pointer:coarse)').matches, TAP=COARSE?'tap':'click', TAPC=COARSE?'Tap':'Click';
+/* a page covers the whole map box: it takes the keyboard (so the wheel and Page Down scroll it), stops any walk, and switches the map buttons off */
+const openSide=()=>{const s=$('#side');s.hidden=false;$('#veil').hidden=false;s.scrollTop=0;$('#dlg').hidden=true;$('.stagebar').inert=true;hero.auto=false;if(hero.path.length>1)hero.path.length=1;try{s.focus({preventScroll:true})}catch(e){}},
+  closeSide=()=>{$('#side').hidden=true;$('#veil').hidden=true;$('.stagebar').inert=false;if(seenAtNext){seenAt=seenAtNext;seenAtNext='';chgBadge()}toMap()};
+/* keys go to the map whenever no text is open: drop focus left on a hidden button or text box */
+function toMap(){const a=document.activeElement;if(a&&a!==document.body&&a.id!=='cv')a.blur();try{window.focus();$('#cv').focus({preventScroll:true})}catch(e){}}
+const turnOf=q=>frame==='today'?q.turn:(frame==='sprint'&&q.turn!=='done'?(q.turn==='you'?'claude':'wait'):'done');
+/* the one ranking of your moves, used by Your moves, the Next button and the compass:
+   overdue first, then the nearest hard deadline (tier), then the earlier date, then the quest that unblocks the most others */
+const unblocks=q=>allQ().filter(o=>o.state==='open'&&(o.blk||[]).includes(q.n)).length;
+const myMoves=()=>allQ().filter(q=>turnOf(q)==='you').map(q=>({...q,ub:unblocks(q)})).sort((a,b)=>(b.late|0)-(a.late|0)||a.tier-b.tier||(a.due||'9999').localeCompare(b.due||'9999')||b.ub-a.ub||a.n-b.n);
+/* the compass points at the top-ranked move whose place you have not opened on this visit; opening it moves the compass on */
+const visited=new Set();
+const compassQ=()=>frame==='today'?myMoves().find(q=>!visited.has(q.p.id))||null:null;
+const allQ=()=>{const seen=new Set();return P.flatMap(p=>p.q.map(q=>({...q,p}))).filter(q=>!seen.has(q.n)&&seen.add(q.n))};
+
+/* ---------- drawing ---------- */
+const cv=$('#cv'), g=cv.getContext('2d');
+const WATER=['#1f5f86','#184f74','#134262','#103854','#0d3049'];
+function tile(x,y,sx,sy){if(x<0||y<0||x>=W||y>=H){g.fillStyle=WATER[4];g.fillRect(sx,sy,T,T);return}
+  const v=at(x,y),r=rnd(x,y),r2=rnd(y,x);
+  const ph=reduce?0:(tick>>5);
+  if(v===SEA||v===SHORE||v===LANE||v===BRIDGE){const d=depth[y*W+x];g.fillStyle=WATER[Math.min(4,d-1)];g.fillRect(sx,sy,T,T);
+    if((x+y*3+ph)%7===0){g.fillStyle='rgba(160,210,235,.22)';g.fillRect(sx+3,sy+6,6,1);g.fillRect(sx+8,sy+11,5,1)}
+    if(d===1){g.fillStyle='rgba(220,240,250,.35)';const o=(ph+x+y)%3; N4.forEach(([a,b])=>{if(isLand(at(x+a,y+b))){ if(a===1)g.fillRect(sx+T-2-o,sy,1,T); if(a===-1)g.fillRect(sx+1+o,sy,1,T); if(b===1)g.fillRect(sx,sy+T-2-o,T,1); if(b===-1)g.fillRect(sx,sy+1+o,T,1);}})}
+    if(v===BRIDGE){const hz=walk(x+1,y)||walk(x-1,y);g.fillStyle='#4b2e1b';if(hz){g.fillRect(sx,sy+3,T,10);g.fillStyle='#a9774c';g.fillRect(sx,sy+4,T,8);g.fillStyle='#8a5a3a';for(let i=1;i<T;i+=4)g.fillRect(sx+i,sy+4,1,8);g.fillStyle='#e9e4d4';g.fillRect(sx,sy+2,T,1);g.fillRect(sx,sy+13,T,1)}
+      else{g.fillRect(sx+3,sy,10,T);g.fillStyle='#a9774c';g.fillRect(sx+4,sy,8,T);g.fillStyle='#8a5a3a';for(let i=1;i<T;i+=4)g.fillRect(sx+4,sy+i,8,1);g.fillStyle='#e9e4d4';g.fillRect(sx+2,sy,1,T);g.fillRect(sx+13,sy,1,T)}}
+    return}
+  const base={[SAND]:'#e3cf96',[GRASS]:'#5aa862',[WOOD]:'#5aa862',[ROAD]:'#5aa862',[ROCK]:'#101018',[OLIVE]:'#b3b56b',[MOUNT]:'#5aa862',[RIVER]:'#5aa862',[DESERT]:'#dcc084',[PALM]:'#dcc084',[FIELD]:'#c9b85a'}[v];
+  const dry=dryAt(x,y); let bg=base; if((v===ROAD||v===MOUNT||v===WOOD)&&dry)bg=groundOf(landAt(x,y),y)===DESERT?'#dcc084':'#b3b56b';
+  g.fillStyle=bg;g.fillRect(sx,sy,T,T);
+  // ground texture
+  if(bg==='#5aa862'){g.fillStyle='#4d9a57';if(r>.35)g.fillRect(sx+(r*12|0),sy+(r2*12|0),3,2);g.fillStyle='#6cba70';if(r2>.6)g.fillRect(sx+(r2*13|0),sy+(r*13|0),2,1);if(r>.93){g.fillStyle='#f4e36b';g.fillRect(sx+5,sy+9,2,2);g.fillStyle='#f29fb5';g.fillRect(sx+10,sy+4,2,2)}}
+  else if(bg==='#b3b56b'){g.fillStyle='#a3a65e';if(r>.4)g.fillRect(sx+(r*12|0),sy+(r2*12|0),3,2);if(r>.9){g.fillStyle='#8c8f52';g.fillRect(sx+4,sy+10,3,2)}}
+  else if(bg==='#dcc084'||bg==='#e3cf96'){g.fillStyle='rgba(150,120,70,.35)';if(r>.5)g.fillRect(sx+(r*12|0),sy+(r2*13|0),3,1)}
+  else if(v===FIELD){g.fillStyle='#b3a148';for(let i=2;i<T;i+=4)g.fillRect(sx,sy+i,T,1)}
+  if(v===ROAD){const c=dry?'#d9c79c':'#c9a873',e=dry?'#b9a57a':'#a8884f';
+    const arm=(a,b)=>walk(x+a,y+b); const wet=N4.filter(([a,b])=>at(x+a,y+b)===RIVER).length>=2;
+    g.fillStyle=wet?'#8a5a3a':e;g.fillRect(sx+3,sy+3,10,10);
+    if(arm(1,0))g.fillRect(sx+13,sy+3,3,10);if(arm(-1,0))g.fillRect(sx,sy+3,3,10);if(arm(0,1))g.fillRect(sx+3,sy+13,10,3);if(arm(0,-1))g.fillRect(sx+3,sy,10,3);
+    g.fillStyle=wet?'#a9774c':c;g.fillRect(sx+4,sy+4,8,8);
+    if(arm(1,0))g.fillRect(sx+12,sy+4,4,8);if(arm(-1,0))g.fillRect(sx,sy+4,4,8);if(arm(0,1))g.fillRect(sx+4,sy+12,8,4);if(arm(0,-1))g.fillRect(sx+4,sy,8,4);
+    g.fillStyle=wet?'#6b4329':'rgba(120,90,50,.45)';if(wet){g.fillRect(sx,sy+7,T,1);g.fillRect(sx+7,sy,1,T)}else if(r>.5)g.fillRect(sx+6+(r*3|0),sy+6,2,2)}
+  else if(v===RIVER){g.fillStyle='#2f7fb0';g.fillRect(sx+3,sy,10,T);g.fillStyle='#4a9bc9';g.fillRect(sx+5,sy+((ph*2+y*5)%12),2,4);g.fillRect(sx+9,sy+((ph*2+y*5+6)%12),2,3)}
+  else if(v===WOOD){const dk=dry?'#5d7a3c':'#2c6b43',lt=dry?'#7a9750':'#3f8a57';
+    g.fillStyle='rgba(0,0,0,.18)';g.fillRect(sx+3,sy+13,11,2);g.fillStyle='#5a4028';g.fillRect(sx+7,sy+10,2,5);
+    if(pinesAt(x,y)){g.fillStyle=dk;g.fillRect(sx+3,sy+8,10,3);g.fillRect(sx+4,sy+5,8,3);g.fillRect(sx+6,sy+2,4,3);g.fillStyle=lt;g.fillRect(sx+6,sy+3,2,2);g.fillRect(sx+5,sy+6,3,2)}
+    else{g.fillStyle=dk;g.fillRect(sx+2,sy+3,12,8);g.fillRect(sx+4,sy+1,8,11);g.fillStyle=lt;g.fillRect(sx+5,sy+3,5,4)}}
+  else if(v===PALM){g.fillStyle='rgba(0,0,0,.18)';g.fillRect(sx+4,sy+14,9,1);g.fillStyle='#7a5a36';g.fillRect(sx+7,sy+6,2,9);g.fillStyle='#3f8a57';g.fillRect(sx+2,sy+4,12,2);g.fillRect(sx+4,sy+2,8,2);g.fillRect(sx+3,sy+6,3,2);g.fillRect(sx+10,sy+6,3,2)}
+  else if(v===MOUNT){const il=dry;g.fillStyle='rgba(0,0,0,.18)';g.fillRect(sx,sy+13,T,3);
+    g.fillStyle=il?'#a08a62':'#6f7684';g.fillRect(sx+1,sy+9,14,6);g.fillRect(sx+3,sy+5,10,4);g.fillRect(sx+5,sy+2,6,3);
+    g.fillStyle=il?'#b8a47a':'#8b93a3';g.fillRect(sx+3,sy+6,4,7);g.fillRect(sx+5,sy+3,3,3);
+    if(!il){g.fillStyle='#eef3f7';g.fillRect(sx+6,sy+1,4,2);g.fillRect(sx+5,sy+3,2,1)}}
+  else if(v===ROCK){g.fillStyle='#1c1c28';g.fillRect(sx+2,sy+3,5,4);g.fillRect(sx+9,sy+9,4,3)}
+}
+function rects(list,ox,oy,flat){ if(!flat){g.fillStyle='#1a1410';list.forEach(([c,x,y,w,h])=>g.fillRect(ox+x-1,oy+y-1,w+2,h+2))}
+  list.forEach(([c,x,y,w,h])=>{g.fillStyle=flat||c;g.fillRect(ox+x,oy+y,w,h)})}
+function sprite(p,sx,sy){const st=statusOf(p), s=SPR[p.kind]||SPR.town, ox=sx-8, oy=sy-16;
+  g.fillStyle='rgba(0,0,0,.25)';g.fillRect(ox+2,oy+29,29,4);
+  if(st==='fog'){g.globalAlpha=.92;rects(s,ox,oy,'#4b5661');g.globalAlpha=1;
+    g.fillStyle='#0b1722';g.fillRect(ox+11,oy+12,10,11);g.fillStyle='#f2c14e';g.font='bold 11px monospace';g.fillText('?',ox+13,oy+22);return}
+  if(st==='sighted'){g.globalAlpha=.6;rects(s,ox,oy);g.globalAlpha=1}
+  else rects(s,ox,oy);
+  if(p.kind==='light'&&st!=='sighted'&&(reduce||(tick>>4)%2)){g.fillStyle='rgba(247,226,122,.4)';g.fillRect(ox-10,oy+3,52,6);g.fillRect(ox-4,oy+1,40,10)}
+  if(st==='decided'){g.strokeStyle='#f2c14e';g.setLineDash([3,3]);g.lineWidth=1;g.strokeRect(ox-2.5,oy-2.5,37,37);g.setLineDash([])}
+  if(st==='done'){g.fillStyle='#3a2a1a';g.fillRect(ox+30,oy-7,1,14);g.fillStyle='#7bd389';g.fillRect(ox+31,oy-7,8,5);g.fillStyle='#4fae63';g.fillRect(ox+31,oy-3,8,1)}
+}
+function fogAt(x,y){ if(frame!=='today')return false; let f=false;
+  for(const p of P){const d=Math.max(Math.abs(p.x-x),Math.abs(p.y-y)); if(p.status==='fog'&&d<=2)f=true; else if(p.status!=='fog'&&p.status!=='pillar'&&d<=1)return false}
+  return f&&at(x,y)!==ROAD}
+function airfield(sx,sy){g.fillStyle='#1a1410';g.fillRect(sx-9,sy+1,34,14);g.fillStyle='#5b6069';g.fillRect(sx-8,sy+2,32,12);g.fillStyle='#f2efe2';for(let i=-6;i<22;i+=6)g.fillRect(sx+i,sy+7,3,2);
+  g.fillStyle='#1a1410';g.fillRect(sx+17,sy-15,9,17);g.fillStyle='#d9d2bf';g.fillRect(sx+18,sy-14,7,15);g.fillStyle='#7fd0e8';g.fillRect(sx+18,sy-13,7,4);g.fillStyle='#c0503c';g.fillRect(sx+21,sy-19,1,5)}
+function drawHero(sx,sy){const moving=hero.path.length>0, b=(!reduce&&moving)?((tick>>2)%2):0, d=hero.dir;
+  g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,sy+14,10,2);
+  g.fillStyle='#1a1410';g.fillRect(sx+3,sy-2,10,16);
+  g.fillStyle='#2b3a67';g.fillRect(sx+5,sy+9,2,5-b);g.fillRect(sx+9,sy+9,2,4+b);
+  g.fillStyle='#e0563f';g.fillRect(sx+4,sy+4,8,6);
+  g.fillStyle='#f1c9a0';g.fillRect(sx+5,sy,6,5);
+  g.fillStyle='#3a2a1a';g.fillRect(sx+4,sy-1,8,2); if(hero.up)g.fillRect(sx+5,sy,6,4); else {g.fillRect(d>0?sx+4:sx+11,sy,1,3);g.fillStyle='#1a1410';g.fillRect(d>0?sx+9:sx+6,sy+2,1,1)}
+  g.fillStyle='#f2c14e';g.fillRect(d>0?sx+2:sx+12,sy+5,2,5)}
+function drawPlane(sx,sy,t){const lift=Math.sin(Math.PI*t)*26, d=hero.dir;
+  g.fillStyle='rgba(0,0,0,.22)';g.fillRect(sx+1,sy+10,14,3);
+  const y=sy-lift-2; g.fillStyle='#1a1410';g.fillRect(sx-4,y+3,24,7);g.fillRect(sx+4,y-4,7,21);
+  g.fillStyle='#f2efe2';g.fillRect(sx-3,y+4,22,5);g.fillStyle='#c7ccd4';g.fillRect(sx+5,y-3,5,19);
+  g.fillStyle='#e0563f';g.fillRect(d>0?sx-3:sx+16,y+1,3,5);g.fillStyle='#7fd0e8';g.fillRect(d>0?sx+14:sx,y+5,3,2)}
+const blimp=()=>reduce?{x:40,y:5}:{x:((tick*.012+26)%(W+12))-6,y:5+Math.sin(tick/90)*.8};
+let cam={x:0,y:0,w:36,h:22};
+/* zoom: z = screen px per art px. Level 0 fits the whole map; the rest are whole device pixels, so the art stays crisp at any display scaling. */
+let Z=[1],zi=-1,z=1,lastZi=-1,pan={x:0,y:0};const pts=new Map();
+function layout(){const st=$('#stage');const cw=st.clientWidth,ch=st.clientHeight,dpr=window.devicePixelRatio||1;
+  const fit=Math.min(cw/(W*T),ch/(H*T)),prev=zi<0?2:z,wasWhole=zi===0;
+  const cover=Math.max(cw/(W*T),ch/(H*T)),top=Math.max(4,cover+1); /* past the map's edge there is open sea */
+  Z=[fit];for(let n=1;n/dpr<=top;n++)if(n/dpr>fit*1.2)Z.push(n/dpr);
+  zi=wasWhole?0:Z.reduce((b,v,i)=>i&&(!b||Math.abs(v-prev)<Math.abs(Z[b]-prev))?i:b,0)||0;
+  setZoom(zi)}
+function setZoom(i){zi=Math.max(0,Math.min(Z.length-1,i));z=Z[zi];whole=zi===0;if(!whole)lastZi=zi;
+  const st=$('#stage'),cw=st.clientWidth,ch=st.clientHeight;
+  /* the canvas always fills the box; where the view is wider than the map, open sea fills the rest */
+  cv.width=Math.ceil(cw/z);cv.height=Math.ceil(ch/z);cam.w=cw/z/T;cam.h=ch/z/T;
+  cv.style.width=cv.width*z+'px';cv.style.height=cv.height*z+'px';$('#zoom').textContent=whole?'Zoom to me':'Whole map';$('#zout').disabled=zi===0;$('#zin').disabled=zi===Z.length-1}
+function zoomBy(d){setZoom(zi+d);draw();labels()}
+function place(c,size,full,off){ if(size>=full)return (full-size)/2; const base=c+.5-size/2; return Math.max(0,Math.min(full-size,base+off)) }
+const flying=()=>at(Math.round(hero.px),Math.round(hero.py))===LANE;
+function draw(){
+  /* after looking around, the view glides back to the walker instead of snapping */
+  if(hero.path.length&&!pts.size){pan.x*=.88;pan.y*=.88;if(Math.abs(pan.x)<.05)pan.x=0;if(Math.abs(pan.y)<.05)pan.y=0}
+  cam.x=place(hero.px,cam.w,W,pan.x); cam.y=place(hero.py,cam.h,H,pan.y);
+  if(cam.w<W)pan.x=cam.x-(hero.px+.5-cam.w/2); if(cam.h<H)pan.y=cam.y-(hero.py+.5-cam.h/2);
+  const x0=Math.floor(cam.x),y0=Math.floor(cam.y),fx=Math.round((cam.x-x0)*T),fy=Math.round((cam.y-y0)*T);
+  g.imageSmoothingEnabled=false;
+  for(let y=-1;y<=cam.h+1;y++)for(let x=-1;x<=cam.w+1;x++)tile(x0+x,y0+y,x*T-fx,y*T-fy);
+  const S=(x,y)=>[Math.round((x-cam.x)*T),Math.round((y-cam.y)*T)];
+  // flight path
+  if(PORT_A){g.fillStyle='rgba(242,239,226,.75)';for(let i=0;i<=24;i++){const t=i/24,[sx,sy]=S(PORT_A.x+t*(PORT_B.x-PORT_A.x),PORT_A.y);if(i%2===0)g.fillRect(sx+7,sy+6-Math.sin(Math.PI*t)*26,2,2)}}
+  PORTS.forEach(pt=>{const [a,b]=S(pt.x,pt.y);airfield(a,b)});
+  const [hx,hy]=S(hero.px,hero.py), fl=flying();
+  const things=[...P.map(p=>({y:p.y,f:()=>{const [sx,sy]=S(p.x,p.y);if(sx>-48&&sy>-48&&sx<cv.width+48&&sy<cv.height+48)sprite(p,sx,sy)}})),{y:hero.py+.1,f:()=>{if(!fl)drawHero(hx,hy)}}];
+  things.sort((a,b)=>a.y-b.y).forEach(t=>t.f());
+  for(let y=0;y<=cam.h;y++)for(let x=0;x<=cam.w;x++){const tx=x0+x,ty=y0+y;if(fogAt(tx,ty)){const o=reduce?0:((tick>>6)+tx+ty)%2;g.fillStyle='rgba(206,217,226,.30)';g.fillRect(x*T-fx,y*T-fy,T,T);g.fillStyle='rgba(236,242,246,.26)';for(let i=0;i<4;i++)for(let j=0;j<4;j++)if((i+j+o)%2===0)g.fillRect(x*T-fx+i*4,y*T-fy+j*4,4,4)}}
+  if(frame==='today')P.forEach(p=>{const u=urg(p);if(u>=0){const [sx,sy]=S(p.x,p.y),b=reduce||u===2?0:Math.round(Math.sin(tick/(u?14:6))*(u?1:3));
+    g.fillStyle='#1a1410';g.fillRect(sx+4,sy-31+b,8,14);g.fillStyle=URG[u];g.fillRect(sx+5,sy-30+b,6,7);g.fillRect(sx+6,sy-23+b,4,1);g.fillRect(sx+6,sy-21+b,4,3)}});
+  if(frame==='today'){const cp=changedPlaces();P.forEach(p=>{if(!cp.has(p.id))return;const [sx,sy]=S(p.x,p.y),on=reduce||((tick>>4)+p.x)%3;
+    g.fillStyle=on?'#fff3a8':'#f2c14e';g.fillRect(sx+24,sy-14,2,8);g.fillRect(sx+21,sy-11,8,2);if(on){g.fillStyle='#fff';g.fillRect(sx+24,sy-11,2,2)}})}
+  if(fl&&PORT_A)drawPlane(hx,hy,(hero.px-PORT_A.x)/(PORT_B.x-PORT_A.x));
+  if(frame==='today'){STORMS.forEach((st,i)=>{const sp=stormPos(st),[sx,sy]=S(sp.x,sp.y),near=st.days<=21,w=near?1:.6;
+    const dr=reduce?0:Math.sin(tick/50+i)*3; g.globalAlpha=w;
+    g.fillStyle='rgba(6,10,20,.55)';g.fillRect(sx-30+dr,sy+16,76,30);
+    g.fillStyle='#1b2030';g.fillRect(sx-34+dr,sy-6,84,20);g.fillRect(sx-22+dr,sy-16,58,36);g.fillStyle='#2a3147';g.fillRect(sx-18+dr,sy-12,40,10);g.fillRect(sx-30+dr,sy-2,30,8);
+    g.fillStyle='rgba(150,180,210,.5)';for(let k=0;k<9;k++){const rx=sx-28+k*9+dr,ry=sy+16+((tick*2+k*7)%22);g.fillRect(rx,reduce?sy+22:ry,1,5)}
+    if(near&&!reduce&&(tick+i*37)%140<6){g.fillStyle='#fff3a8';g.fillRect(sx+4+dr,sy+12,3,8);g.fillRect(sx+1+dr,sy+19,3,8);g.fillRect(sx+4+dr,sy+26,2,7)}
+    g.globalAlpha=1})
+   const SH=WORLD.map.ship;if(SH){const [hx2,hy2]=S(SH.x+(reduce?0:Math.sin(tick/160)*.4),SH.y);g.fillStyle='#1a1410';g.fillRect(hx2-1,hy2+7,22,8);g.fillRect(hx2+8,hy2-8,3,16);g.fillStyle='#8a5a3a';g.fillRect(hx2,hy2+8,20,6);g.fillStyle='#f2efe2';g.fillRect(hx2+11,hy2-7,8,12);g.fillStyle='#7bd389';g.fillRect(hx2+4,hy2-7,4,3)}}
+  {const [bx,by]=S(blimp().x,blimp().y);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(bx-10,by+44,36,5);
+   g.fillStyle='#1a1410';g.fillRect(bx-19,by-9,54,22);g.fillRect(bx-13,by-13,42,30);g.fillRect(bx+1,by+16,16,9);
+   g.fillStyle='#e9e4d4';g.fillRect(bx-18,by-8,52,20);g.fillRect(bx-12,by-12,40,28);g.fillStyle='#c9c3b0';g.fillRect(bx-12,by+8,40,8);
+   g.fillStyle='#f2c14e';g.fillRect(bx-18,by-1,52,5);g.fillStyle='#e0563f';g.fillRect(bx-22,by-6,5,15);
+   g.fillStyle='#5b3a22';g.fillRect(bx+2,by+17,14,7);g.fillStyle='#7fd0e8';g.fillRect(bx+4,by+19,3,3);g.fillRect(bx+10,by+19,3,3)}
+  // drifting cloud shadows and light
+  if(!reduce){g.fillStyle='rgba(8,20,32,.10)';for(let i=0;i<4;i++){const cx=((tick*.25+i*310)%(W*T+300))-150-cam.x*T, cy=(i*137%(H*T))-cam.y*T;g.fillRect(cx,cy,150,34);g.fillRect(cx+24,cy-14,96,62)}}
+  const vg=g.createRadialGradient(cv.width/2,cv.height/2,Math.min(cv.width,cv.height)*.45,cv.width/2,cv.height/2,Math.max(cv.width,cv.height)*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(4,12,22,.5)');g.fillStyle=vg;g.fillRect(0,0,cv.width,cv.height);
+  const sun=g.createLinearGradient(0,0,cv.width,cv.height);sun.addColorStop(0,'rgba(255,214,140,.10)');sun.addColorStop(.6,'rgba(255,214,140,0)');g.fillStyle=sun;g.fillRect(0,0,cv.width,cv.height);
+  if(sel){const [sx,sy]=S(sel.x,sel.y);g.strokeStyle='#fff';g.lineWidth=1;g.strokeRect(sx-11.5,sy-19.5,39,39)}
+  compass(S)
+}
+/* the compass: a gold arrow at the edge of the view pointing to your next move, or a marker over it once it is in view */
+function compass(S){const el=$('#compass'),q=compassQ(),at=q&&near()===q.p;
+  if(!q||at||!$('#side').hidden){el.hidden=true;return}
+  const p=q.p,[px,py]=S(p.x,p.y),tx=px+8,ty=py-6,cw=cv.width,ch=cv.height,k=cv.clientWidth/cw,m=36/k, b=reduce?0:Math.round(Math.sin(tick/9)*3);
+  const inView=tx>8&&ty>40&&tx<cw-8&&ty<ch-8;
+  g.fillStyle='#1a1410';
+  if(inView){const x=tx,y=py-44+b; // a down chevron above the place's own mark
+    g.fillRect(x-8,y-2,16,6);g.fillRect(x-5,y+4,10,4);g.fillRect(x-2,y+8,4,3);g.fillStyle='#f2c14e';g.fillRect(x-6,y,12,3);g.fillRect(x-3,y+3,6,3);g.fillRect(x-1,y+6,2,3);
+    el.hidden=true;return}
+  const cx=cw/2,cy=ch/2,dx=tx-cx,dy=ty-cy,sc=Math.min((cw/2-m)/Math.abs(dx||1e-6),(ch/2-m)/Math.abs(dy||1e-6)),ex=cx+dx*sc,ey=cy+dy*sc,a=Math.atan2(dy,dx);
+  /* the arrow keeps one screen size at every zoom */
+  g.save();g.translate(ex,ey);g.rotate(a);g.scale(1.5/k,1.5/k);g.translate(b-4,0);
+  g.beginPath();g.moveTo(16,0);g.lineTo(-10,-13);g.lineTo(-4,0);g.lineTo(-10,13);g.closePath();g.lineWidth=4;g.strokeStyle='#1a1410';g.stroke();g.fillStyle='#f2c14e';g.fill();g.restore();
+  const steps=(()=>{const [hx,hy]=here(),r=bfs(hx,hy,p.x,p.y);return r?r.length:0})();
+  const txt=`${trim(q.t)}${steps?` · ${steps} steps`:''}`;
+  if(el.dataset.t!==txt){el.dataset.t=txt;el.textContent=txt;el.title=`Next move: ${q.t}. Click to walk there.`}
+  /* the label hugs the screen edge beside the arrow, never across the middle, and never over you */
+  el.hidden=false;const w=el.offsetWidth,h=el.offsetHeight,cwc=cv.clientWidth,chc=cv.clientHeight,ax=ex*k,ay=ey*k;
+  const [hx,hy]=S(hero.px,hero.py),me={l:hx*k-12,r:(hx+16)*k+12,t:(hy-16)*k-12,b:(hy+16)*k+12};
+  const bar=$('.stagebar').getBoundingClientRect(),cr=cv.getBoundingClientRect(),sb={l:bar.left-cr.left,r:bar.right-cr.left,t:bar.top-cr.top,b:bar.bottom-cr.top};
+  const fit=(x,y)=>({l:Math.max(4,Math.min(cwc-w-4,x)),t:Math.max(4,Math.min(chc-h-4,y))});
+  const hit=(c,o)=>!(c.l+w<o.l||c.l>o.r||c.t+h<o.t||c.t>o.b);
+  const side=Math.abs(Math.cos(a))>Math.abs(Math.sin(a));
+  const tries=side?[fit(ax-w/2,ay+30),fit(ax-w/2,ay-30-h)]:[fit(ax+30,ay-h/2),fit(ax-30-w,ay-h/2)];
+  tries.push(fit(ax-Math.cos(a)*(w/2+34)-w/2,ay-Math.sin(a)*(h/2+30)-h/2));
+  const c=tries.find(c=>!hit(c,me)&&!hit(c,sb))||tries.find(c=>!hit(c,me))||tries[0];
+  el.style.left=c.l+cv.offsetLeft+'px';el.style.top=c.t+cv.offsetTop+'px'}
+function labels(){const el=$('#labels'),cw=cv.clientWidth,k=z;let h='';
+  const snap=c=>{const c0=Math.floor(c);return c0+Math.round((c-c0)*T)/T},cx=snap(cam.x),cy=snap(cam.y);
+  const put=(x,y,name,cls,pri,id)=>{const sx=(x-cx)*T*k+8*k, sy=(y-cy)*T*k+19*k; if(sx<0||sy<0||sx>cw||sy>cv.clientHeight-4)return;h+=`<span class="lab ${cls}" data-pri="${pri}"${id?` data-p="${id}"`:''} style="left:${sx}px;top:${sy}px">${name}</span>`};
+  P.forEach(p=>{const st=statusOf(p), u=frame==='today'?urg(p):-1; put(p.x,p.y,esc(p.name),(st==='fog'?'fog ':'')+(u>=0?'you u'+u:''),p===sel?9:u>=0?7-u:3,p.id)});
+  if(frame==='today'){STORMS.forEach(st=>{const s=stormPos(st);put(s.x,s.y+1.6,st.label,'storm',8)});if(WORLD.map.ship)put(WORLD.map.ship.x+.6,WORLD.map.ship.y+.2,esc(WORLD.map.ship.label),'ship',1)}
+  PORTS.forEach(pt=>put(pt.x,pt.y,'Airfield','fog',1));
+  el.innerHTML=h; el.style.height=cv.clientHeight+'px'; el.style.inset='auto';el.style.left=cv.offsetLeft+'px';el.style.top=cv.offsetTop+'px';el.style.width=cw+'px';
+  /* when two labels collide, the less important one hides */
+  const er=el.getBoundingClientRect(),kept=[$('.stagebar'),$('#open')].filter(b=>b&&!b.hidden).flatMap(b=>[...(b.id==='open'?[b]:b.children)].filter(c=>!c.hidden).map(c=>c.getBoundingClientRect()));
+  [...el.children].forEach(e=>{const w=e.offsetWidth/2+3,l=parseFloat(e.style.left);if(er.width>w*2)e.style.left=Math.max(w,Math.min(er.width-w,l))+'px'});
+  [...el.children].sort((a,b)=>b.dataset.pri-a.dataset.pri).forEach(e=>{const r=e.getBoundingClientRect();
+    const hit=b=>kept.some(q=>!(b.right<q.left-3||b.left>q.right+3||b.bottom<q.top-1||b.top>q.bottom+1));
+    let b={left:r.left,right:r.right,top:r.top,bottom:r.bottom};
+    /* second try: one line lower, before giving up */
+    if(hit(b)){const dy=r.height+2;b={left:r.left,right:r.right,top:r.top+dy,bottom:r.bottom+dy};if(hit(b)||b.bottom>er.bottom){e.style.visibility='hidden';return}e.style.top=parseFloat(e.style.top)+dy+'px'}
+    kept.push(b)})}
+
+/* ---------- movement: trails only ---------- */
+function bfs(sx,sy,tx,ty){if(!walk(tx,ty))return null;const s0=sy*W+sx,prev=new Int32Array(W*H).fill(-1),q=[s0];prev[s0]=s0;
+  for(let i=0;i<q.length;i++){const c=q[i],x=c%W,y=(c/W)|0;if(x===tx&&y===ty){const path=[];let k=c;while(k!==s0){path.unshift({x:k%W,y:(k/W)|0});k=prev[k]}return path}
+    for(const [a,b] of N4){const nx=x+a,ny=y+b,n=ny*W+nx;if(nx>=0&&ny>=0&&nx<W&&ny<H&&prev[n]<0&&walk(nx,ny)){prev[n]=c;q.push(n)}}}
+  return null}
+const here=()=>[Math.round(hero.px),Math.round(hero.py)];
+/* tap a place: walk there with the map in view, then its page opens over the map */
+function goTo(p,auto=true){ closeSide();$('#dlg').hidden=true; if(p.kind==='pillar'||LANDS[p.land]?.reach===false){select(p);return} const [hx,hy]=here(); hero.path=bfs(hx,hy,p.x,p.y)||[]; if(!hero.path.length){select(p);return} sel=p;hero.auto=auto;labels();tip('walked')}
+function step(dx,dy){if(!$('#side').hidden)return;
+  /* a key pressed mid-walk takes over: finish the current tile, then go that way */
+  if(hero.path.length){hero.path.length=1;hero.auto=false;hero.next=[dx,dy];return}
+  const nx=hero.x+dx,ny=hero.y+dy; if(!walk(nx,ny)){bump();return} hero.path=[{x:nx,y:ny}];bumped=0;pending=null;$('#dlg').hidden=true; if(sel&&!(Math.abs(sel.x-nx)<=0&&Math.abs(sel.y-ny)<=0)){sel=null}}
+let bumped=0;function bump(){if(++bumped===4)say('guide',`You can only walk on trails. ${TAPC} any trail or any place and you will find the way there.`)}
+function near(){return P.find(p=>p.x===hero.x&&p.y===hero.y)}
+let lastT=0,tickF=0;function loop(ts){const dt=Math.min(3,lastT?(ts-lastT)/16.667:1);lastT=ts;tickF+=dt;tick=Math.floor(tickF);let moved=false;
+  if(hero.path.length){const n=hero.path[0],sp=(at(n.x,n.y)===LANE||flying()?.16:.2)*dt;const dx=n.x-hero.px,dy=n.y-hero.py;
+    if(dx)hero.dir=Math.sign(dx); hero.up=dy<0&&!dx;
+    if(Math.abs(dx)<=sp&&Math.abs(dy)<=sp){hero.px=hero.x=n.x;hero.py=hero.y=n.y;hero.path.shift();if(!hero.path.length){const p=near(),auto=hero.auto;hero.auto=false;if(p){auto?select(p):arrive(p)} if(hero.next){const d=hero.next;hero.next=null;step(d[0],d[1])}}}
+    else{hero.px+=Math.sign(dx)*Math.min(sp,Math.abs(dx));hero.py+=Math.sign(dy)*Math.min(sp,Math.abs(dy))}
+    moved=true}
+  openChip();draw();if(moved)labels();requestAnimationFrame(loop)}
+
+/* ---------- panels ---------- */
+const CH={you:['you','Your move'],claude:['claude',"Claude's move"],wait:['wait','Waiting'],done:['done','Done']};
+const chip=(t,who)=>`<span class="chip ${CH[t][0]}">${CH[t][1]}${t==='wait'&&who?': '+who:''}</span>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ST={fog:'In fog',sighted:'Sighted',mapped:'Mapped',decided:'Decided',done:'Done',pillar:'Not a quest'};
+const STWHY={fog:'We do not know this yet, or have not decided it.',sighted:'Known, but no current document confirms it yet.',mapped:'A statement backs this number.',decided:'A dated decision is written down.',done:'In place and running by itself.',pillar:'Visible from everywhere.'};
+function hud(){const qs=allQ(),mine=myMoves(),you=mine.length,done=qs.filter(q=>turnOf(q)==='done').length;
+  const dec=P.filter(p=>['decided','done'].includes(statusOf(p))).length, places=P.filter(p=>p.kind!=='pillar').length;
+  $('#hud').innerHTML=`<div class="stat ${you?'hot':''}"><b>${you}</b><span>Your moves</span></div>
+   <div class="stat"><b>${frame==='today'?NEXT_CLOCK:'—'}</b><span>Next deadline</span></div>
+   <div class="stat"><b>${done} / ${qs.length}</b><span>Quests done</span></div>
+   <div class="stat"><b>${dec} / ${places}</b><span>Places decided</span></div>`;$('#moves').textContent=`Your moves (${you})`;
+  const nx=$('#next'),cq=compassQ();nx.hidden=!cq;if(cq){nx.textContent=`Next: ${cq.t} →`;nx.title=`${cq.t} · ${cq.clock}`}
+  const n=$('#note');n.hidden=frame==='today';n.textContent=frame==='sprint'?'Preview, not real data: the map once every place has a dated decision.':'Preview, not real data: the map once every decision is carried out.'}
+/* ---------- what changed: worked out by the build from the repo's history (game/history.py) ---------- */
+const KIND={decided:['Decided','quest decided','quests decided'],done:['Done','quest done','quests done'],record:['Decision record','decision written down','decisions written down'],
+  place:['Moved up','place moved up','places moved up'],off:['Off your plate','move off your plate','moves off your plate'],fact:['New number','new number','new numbers'],
+  new:['New quest','new quest','new quests'],yours:['Your move','new move for you','new moves for you'],reopened:['Reopened','quest reopened','quests reopened'],
+  placedown:['Moved down','place moved down','places moved down'],work:['Worked on','','']};
+const ORDER=['decided','done','record','place','off','fact','new','yours','reopened','placedown'];
+let seenAt='';try{seenAt=localStorage.getItem('twoshores-seen')||''}catch(e){}
+const DAY=864e5, newest=CHANGES.length?CHANGES[0].t:'';
+/* first visit on this device: count the last 7 days as new */
+const since=r=>r==='new'?(seenAt?new Date(seenAt).getTime():Date.now()-7*DAY):Date.now()-(+r)*DAY;
+const inRange=r=>CHANGES.filter(c=>new Date(c.t).getTime()>since(r));
+/* a place's + also clears once its own page has shown you its changes */
+let seenP={};try{seenP=JSON.parse(localStorage.getItem('twoshores-seenp')||'{}')}catch(e){}
+const unseen=()=>inRange('new').flatMap(c=>c.ev.map(e=>({...e,t:c.t}))).filter(e=>e.k!=='work'&&!(e.p&&seenP[e.p]&&e.t<=seenP[e.p]));
+const changedPlaces=()=>new Set(frame==='today'?unseen().map(e=>e.p).filter(Boolean):[]);
+function summary(cs){const ev=cs.flatMap(c=>c.ev),n=k=>ev.filter(e=>e.k===k).length,w=new Set(ev.filter(e=>e.k==='work').map(e=>e.txt)).size;
+  const parts=ORDER.filter(n).map(k=>`<b>${n(k)}</b> ${n(k)===1?KIND[k][1]:KIND[k][2]}`);if(w)parts.push(`work on <b>${w}</b> more quest${w>1?'s':''}`);return parts.join(' · ')}
+function dayName(d){const t=new Date(),y=new Date(Date.now()-DAY),same=(a,b)=>a.toDateString()===b.toDateString();
+  return same(d,t)?'Today':same(d,y)?'Yesterday':d.toLocaleDateString(LOCALE,{weekday:'short',month:'short',day:'numeric'})}
+function changesView(r='new'){const cs=inRange(r), when=seenAt?new Date(seenAt).toLocaleString(LOCALE,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+  const title=r==='new'?(seenAt?'What changed since your last look':'What changed this week'):`What changed in the last ${r} days`;
+  const sub=r==='new'&&seenAt?`Since ${when}, when you last opened this page.`:r==='new'?'The last 7 days. From now on this page starts where you left off.':'';
+  let h=`${XBTN}<div class="card"><div><div class="kind">Progress · worked out from the repo's history</div><h3>${title}</h3>${sub?`<div style="color:var(--muted)">${sub}</div>`:''}</div>
+   <div class="ranges" role="group" aria-label="Period">${[['new','Since my last look'],['7','Last 7 days'],['30','Last 30 days']].map(([k,l])=>`<button class="act ghost" data-range="${k}" aria-pressed="${k===r}">${l}</button>`).join('')}</div>`;
+  if(!cs.length)h+=`<div class="q"><div class="n">Nothing has changed in this period.${newest?` The last change was ${dayName(new Date(newest)).replace(/^(Today|Yesterday)$/,m=>m.toLowerCase())}.`:''}</div></div>`;
+  else{h+=`<div class="sum">${summary(cs)}</div>`;let last='';
+    cs.forEach(c=>{const d=new Date(c.t),dn=dayName(d);if(dn!==last){h+=`<div class="day">${dn}</div>`;last=dn}
+      h+=`<div class="cm"><div class="why">${d.toLocaleTimeString(LOCALE,{hour:'numeric',minute:'2-digit'})} · ${esc(c.s)}</div>${c.ev.map(e=>`<button class="ev ${e.k}"${e.p&&byId[e.p]?` data-p="${e.p}" title="Walk to ${esc(byId[e.p].name)}"`:''}><span class="chip k-${e.k}">${KIND[e.k][0]}</span><span>${esc(e.txt)}</span></button>`).join('')}</div>`})}
+  h+=`<div class="cap">Each line is a change to a quest, a place or a decision record, found by comparing the repo before and after each change. Nothing here is typed by hand. Click a line to walk to its place.</div></div>`;
+  $('#side').innerHTML=h;openSide();
+  if(newest&&(!seenAt||newest>seenAt)){try{localStorage.setItem('twoshores-seen',newest)}catch(e){}}
+  seenAtNext=newest}
+let seenAtNext='';
+function chgBadge(){const n=unseen().length;$('#chg').innerHTML=`What changed${n?`<b>${n}</b>`:''}`;$('#chg').title=n?`${n} change${n>1?'s':''} since your last look`:'Nothing new since your last look'}
+function listView(){const qs=myMoves(), others=allQ().filter(q=>turnOf(q)!=='you');
+  $('#side').innerHTML=`${XBTN}<h2>Your moves</h2><div class="sub">${qs.length?'Most urgent first: anything overdue, then the nearest hard deadline, then the earliest date, then what unblocks the most. The compass on the map points at the top one you have not opened yet. Pick one and you walk there.':'Nothing waits on you.'} ${others.filter(q=>turnOf(q)==='claude').length} more are with Claude, ${others.filter(q=>turnOf(q)==='wait').length} are waiting on someone.</div>
+  <div>${qs.map(q=>`<button class="move" data-p="${q.p.id}"><i>${BANG(Math.min(2,q.tier))}</i><div class="clock${q.late?' late':''}">${esc(q.clock)}</div><div class="t">${esc(q.t)}</div><div class="n">${esc(q.p.name)} · quest ${q.n}${q.why?' · '+esc(q.why):''}</div></button>`).join('')}</div>${LEGEND}
+  <div style="padding:0 14px 16px"><button class="act ghost" data-replay="1">Replay the tips</button><div class="cap">${esc($('h1 small').textContent)}</div></div>`}
+const promptFor=(q,p)=>`Quest ${q.n}: ${q.t} (${p.name}). ${q.due?`Deadline: ${q.clock}. `:''}The map says my next step is: "${q.next}" Tell me where this stands, then walk me through it one decision at a time.`;
+const trim=t=>String(t).replace(/[.?!]+$/,'');
+function questHtml(p,q,i){const t=turnOf(q),live=frame==='today';
+  const blk=live?(q.blk||[]).map(n=>{const bp=P.find(x=>x.q.some(y=>y.n===n));if(!bp)return '';const bq=bp.q.find(y=>y.n===n),whose=bq.turn==='you'?'your move':bq.turn==='claude'?"Claude's move":'waiting';
+    return bp===p?`<div class="n">Waits for quest ${n} on this page (${whose}).</div>`:`<div class="row"><button class="act ghost" data-p="${bp.id}">Waits for quest ${n}: ${esc(trim(bq.t))} (${whose}). Walk to ${esc(bp.name)} →</button></div>`}).join(''):'';
+  return `<div class="q">${live&&t==='you'?BANG(Math.min(2,q.tier)):''}${chip(t,q.who)}${live&&q.state==='decided'?'<span class="chip done">Decided, not yet carried out</span>':''}<span class="clock${q.late?' late':''}">${live&&t!=='done'?esc(q.clock):''}</span><div class="t">${esc(q.t)} <span class="qn">quest ${q.n}</span></div>${live&&t!=='done'?`<div class="n">${esc(q.next)}</div>`:''}${blk}
+    ${live&&t==='you'?`<div class="row"><button class="act" data-copy="${i}">Copy the prompt for Claude</button><button class="act ghost" data-done="${i}">I did my part: copy a note</button><span class="copied" data-flag="${i}" hidden></span></div><div class="cap">Paste it in ${esc(F.thread)}. The map changes after Claude writes the decision down.</div>`:''}</div>`}
+/* the same marks the map shows over a place, for its page and its box */
+const marks=p=>{const u=frame==='today'?urg(p):-1,c=changedPlaces().has(p.id);
+  return (u>=0?`<span title="Your move here, ${URGW[u]}">${BANG(u)}</span>`:'')+(c?`<span title="Changed since your last look">${PLUS}</span>`:'')};
+function changedBox(p){const ev=unseen().filter(e=>e.p===p.id);if(!ev.length)return '';
+  seenP[p.id]=ev.reduce((m,e)=>e.t>m?e.t:m,'');try{localStorage.setItem('twoshores-seenp',JSON.stringify(seenP))}catch(e){}setTimeout(chgBadge,0);
+  return `<div class="chg"><div class="kind">${PLUS}Changed since your last look</div>${ev.map(e=>`<div class="ev"><span class="chip k-${e.k}">${KIND[e.k][0]}</span><span>${esc(e.txt)}</span></div>`).join('')}</div>`}
+const SHST={inplace:'In place',decided:'Decided',open:'Open'};
+function learnHtml(p){return p.learn&&p.learn.length?`<div class="learn">${p.learn.map(t=>`<p>${esc(t)}</p>`).join('')}</div>`:''}
+function sheetHtml(p){const rs=p.sheet||[];if(!rs.length)return '';const n=k=>rs.filter(r=>r.st===k).length;
+  const tally=[n('inplace')&&`${n('inplace')} in place`,n('decided')&&`${n('decided')} decided, not yet in place`,n('open')&&`${n('open')} open`].filter(Boolean).join(' · ');
+  return `<div class="sheet"><div class="hd"><b>When this place is finished</b><span>${tally}</span></div>${rs.map(r=>`<div class="srow sr-${r.st}"><span class="pill ${r.st}">${SHST[r.st]}</span><div><div class="k">${esc(r.k)}</div><div class="v">${esc(r.v)}</div>${r.run?`<div class="n">How it runs: ${esc(r.run)}</div>`:''}${r.check&&r.st!=='inplace'?`<div class="n">Done when: ${esc(r.check)}</div>`:''}${r.why?`<details><summary>Why we chose this</summary>${esc(r.why)}</details>`:''}</div></div>`).join('')}</div>`}
+function cardView(p){const st=statusOf(p);visited.add(p.id);
+  const nxt=frame==='today'?myMoves().find(q=>q.p!==p):null;
+  let h=`${XBTN}<div class="card"><div class="row"><button class="act ghost" data-back="1">Your moves</button>${nxt?`<button class="act ghost" data-p="${nxt.p.id}">Next move: ${esc(trim(nxt.t))} →</button>`:''}</div>
+   <div><div class="kind">${esc(LANDS[p.land]?.name||'On the horizon')} · ${ST[st]}</div><h3>${esc(p.name)}${marks(p)}</h3><div style="color:var(--muted)">${esc(p.what)}</div></div>${changedBox(p)}${learnHtml(p)}${sheetHtml(p)}`;
+  const facts=`<dl class="facts"><dt>${/[$₪]/.test(p.val)?'Value':'Today'}</dt><dd>${esc(p.val)}</dd>${p.asof?`<dt>As of</dt><dd>${esc(p.asof)}</dd>`:''}${/^quests? [\d ,and]+$/i.test(p.src)?'':`<dt>Source</dt><dd>${esc(p.src)}</dd>`}<dt>Status</dt><dd>${ST[st]}. ${p.note&&st===p.base?esc(p.note):STWHY[st]}</dd></dl>`;
+  if(!p.sheet||!p.sheet.length)h+=facts;
+  const pnote=p.remark||(p.kind==='pillar'?'You can see it from anywhere, and you cannot walk to it.':'')||LANDS[p.land]?.note;
+  if(pnote)h+=`<div class="q"><div class="n">${esc(pnote)}</div></div>`;
+  if(p.sheet&&p.sheet.length&&p.q.some(q=>q.state!=='done'))h+=`<h4 class="sec">Still to do</h4>`;
+  p.q.forEach((q,i)=>{h+=questHtml(p,q,i)});
+  if(p.sheet&&p.sheet.length)h+=`<h4 class="sec">The record</h4>${facts}`;
+  if(!p.q.length&&p.kind!=='pillar')h+=`<div class="q"><div class="n">No open quest here.</div></div>`;
+  if(sampleFn)h+=`<div class="row"><button class="act ghost" data-ask="${p.id}">Ask Claude about ${esc(p.name)}</button></div>`;
+  if(p.quiz)h+=`<div class="q quiz"><div class="kind">Test yourself</div><div class="t">${esc(p.quiz.ask)}</div>${p.quiz.opts.map((o,i)=>`<button data-a="${i}">${esc(o)}</button>`).join('')}<div class="n" data-why="1" hidden>${esc(p.quiz.why)}</div></div>`;
+  $('#side').innerHTML=h+'</div>';openSide()}
+/* dialog box on the map: the first thing you see when you reach or tap a place */
+function dlgPlace(p,hint){const st=statusOf(p), q=p.q.find(q=>turnOf(q)==='you')||p.q[0], i=q?p.q.indexOf(q):-1, t=q&&turnOf(q);
+  $('#dlg').innerHTML=`<button class="x" data-close="1" aria-label="Close">×</button>
+   <div class="dl-top"><span class="st st-${st}">${ST[st]}</span><b>${esc(p.name)}${marks(p)}</b><span class="dl-what">${esc(p.what)}</span></div>
+   <div class="dl-val">${esc(p.val)}${p.asof?` <span>as of ${esc(p.asof)}</span>`:''}</div>
+   ${q?`<div class="dl-q">${chip(t,q.who)}<span>${esc(q.t)}</span></div><div class="dl-next">${esc(q.next)}</div>`:`<div class="dl-next">${p.kind==='pillar'?'Not a quest. You cannot walk here.':'No open quest here.'}</div>`}
+   ${hint?`<div class="dl-hint">${hint}</div>`:''}<div class="row">${t==='you'?`<button class="act" data-copy="${i}">Copy the prompt for Claude</button>`:''}<button class="act ghost" data-details="1">Full details${p.q.length>1?` (${p.q.length} quests)`:''}</button><span class="copied" data-flag="${i}" hidden>Copied. Paste it in the thread.</span></div>`;
+  $('#dlg').hidden=false;$('#dlg').className='dlg'}
+function say(who,text,next){ $('#dlg').innerHTML=`<button class="x" data-close="1" aria-label="Close">×</button><div class="dl-top"><span class="st st-guide">Guide</span></div><div class="dl-say">${text}</div><div class="row">${next?`<button class="act" data-tipnext="1">Next</button>`:`<button class="act" data-close="1">Got it</button>`}<button class="act ghost" data-skiptips="1">Skip the tips</button></div>`;$('#dlg').hidden=false;$('#dlg').className='dlg guide'}
+/* a storm's page: the quests due by its date that are not decided yet, each with a walk-to button */
+/* a storm drifts toward its place as the date nears, and stops short so it never covers a place */
+const stormPos=st=>{const p=byId[st.at],d=Math.min(11,Math.max(st.min||2,2+st.days/4));return {x:p.x+st.dx*d,y:p.y+st.dy*d}};
+function stormView(st){const qs=allQ().filter(q=>q.due&&q.due<=st.date&&q.state==='open').sort((a,b)=>a.due.localeCompare(b.due)||a.n-b.n);
+  $('#side').innerHTML=`${XBTN}<div class="card"><div><div class="kind">Storm · a hard deadline</div><h3>${esc(st.label)}</h3><div style="color:var(--muted)">${qs.length?`${qs.length} quest${qs.length>1?'s':''} due by then ${qs.length>1?'are':'is'} not decided yet. ${qs.filter(q=>turnOf(q)==='you').length} of them are your move.`:'Nothing due by then is still open.'}</div></div>
+  ${qs.map(q=>`<div class="q">${chip(turnOf(q),q.who)}<span class="clock${q.late?' late':''}">${esc(q.clock)}</span><div class="t">${esc(q.t)} <span class="qn">quest ${q.n}</span></div>${q.why?`<div class="n">${esc(q.why)}</div>`:''}<div class="n">${esc(q.next)}</div><div class="row"><button class="act ghost" data-p="${q.p.id}">Walk to ${esc(q.p.name)} →</button></div></div>`).join('')}</div>`;openSide()}
+const pct=f=>f<.01?(f*100).toFixed(1)+'%':Math.round(f*100)+'%';
+function blimpView(){ sel=null;labels();
+  /* from world.json until the ledger feeds it: assets and debts as [name, value in thousands, shown value, colour] */
+  const B=WORLD.blimp||{}, A=B.assets||[], D=B.debts||[];
+  const tot=A.reduce((t,a)=>t+a[1],0),C=2*Math.PI*38;let off=0;
+  const arcs=A.map(a=>{const len=a[1]/tot*C,d=Math.max(.8,len-2),o=off;off+=len;
+    return `<circle r="38" fill="none" stroke="${a[3]}" stroke-width="18" stroke-dasharray="${d.toFixed(1)} ${(C-d).toFixed(1)}" stroke-dashoffset="${(-o).toFixed(1)}"><title>${a[0]}: ${a[2]} (${pct(a[1]/tot)})</title></circle>`}).join('');
+  const rows=frame!=='today'?'<div class="dl-next">Preview frame: the blimp shows real numbers only on Today.</div>':`<div class="pie">
+   <svg viewBox="-50 -50 100 100" role="img" aria-label="Where the assets are"><g transform="rotate(-90)">${arcs}</g></svg>
+   <ul>${A.map(a=>`<li><i style="background:${a[3]}"></i><span>${a[0]}</span><b>${pct(a[1]/tot)}</b><em>${a[2]}</em></li>`).join('')}</ul></div>
+   <dl class="facts"><dt>Debts</dt><dd>${D.length?D.map(d=>`${esc(d[0])}: ${esc(d[2])}`).join('; '):'none'}</dd>${(B.facts||[]).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}<dt>Statements</dt><dd>${P.filter(p=>p.acct!==false&&['town','city','vault','fortress','bank','shrine','cellar'].includes(p.kind)&&p.base==='mapped').length} of ${P.filter(p=>p.acct!==false&&['town','city','vault','fortress','bank','shrine','cellar'].includes(p.kind)).length} accounts are backed by a statement</dd></dl>
+   ${B.note?`<div class="dl-next">${esc(B.note)}</div>`:''}`;
+  $('#side').innerHTML=`${XBTN}<div class="card"><div><div class="kind">From the blimp · net worth: what you own minus what you owe</div><h3>${frame==='today'&&B.title?esc(B.title):'Net worth'}</h3></div>${rows}</div>
+  <div class="fly" aria-hidden="true"><svg viewBox="0 0 33 18" shape-rendering="crispEdges"><rect x="3" y="1" width="26" height="11" fill="#1a1410"/><rect x="6" y="0" width="20" height="13" fill="#1a1410"/><rect x="4" y="2" width="24" height="9" fill="#e9e4d4"/><rect x="7" y="1" width="18" height="11" fill="#e9e4d4"/><rect x="7" y="9" width="18" height="3" fill="#c9c3b0"/><rect x="4" y="5" width="24" height="2" fill="#f2c14e"/><rect x="1" y="3" width="3" height="7" fill="#e0563f"/><rect x="12" y="13" width="9" height="5" fill="#1a1410"/><rect x="13" y="13" width="7" height="4" fill="#5b3a22"/><rect x="14" y="14" width="2" height="2" fill="#7fd0e8"/><rect x="17" y="14" width="2" height="2" fill="#7fd0e8"/></svg></div>`;openSide()}
+const wide=()=>matchMedia('(min-width:861px)').matches;
+/* one view of a place: the side card on a wide screen, the box on the map on a phone */
+function select(p){sel=p; if(p){cardView(p)}else{closeSide();$('#dlg').hidden=true} labels()}
+/* walking onto a place with the keys: a short box on the map, not the full page */
+function arrive(p){sel=p;labels(); if(!tipsOff&&seen.start&&!seen.start2){seen.start2=1;save();say('guide',TIPS.start2[0])} else tip(p.status==='fog'&&frame==='today'?'fog':'place')}
+/* standing on a place offers one button; Enter, Space or a tap on the place opens its page. Walking through opens nothing. */
+let openFor='';function openChip(){const p=!hero.path.length&&$('#side').hidden?near():null,id=p?p.id:'';if(id===openFor)return;openFor=id;const b=$('#open');b.hidden=!p;if(p)b.textContent=`Open ${p.name}`+(COARSE?'':'  ⏎')}
+function copy(text,flag){const ok=()=>{flag.hidden=false};
+  const fb=()=>{let ta=flag.parentElement.parentElement.querySelector('textarea');if(!ta){ta=document.createElement('textarea');ta.className='fallback';ta.id='fallback-copy';ta.rows=3;ta.readOnly=true;flag.parentElement.after(ta)}ta.value=text;ta.select();flag.textContent='Select and copy the text below.';flag.hidden=false};
+  try{navigator.clipboard.writeText(text).then(ok,fb)}catch(e){fb()}}
+function clicks(e){const b=e.target.closest('button');if(!b)return;const d=b.dataset, box=b.closest('.dlg,aside');
+  if(d.ask)askView(byId[d.ask]);
+  else if(d.p)goTo(byId[d.p]);
+  else if(d.back){listView();openSide()}
+  else if(d.range){changesView(d.range)}
+  else if(d.closeside)closeSide();
+  else if(d.close){$('#dlg').hidden=true}
+  else if(d.details){cardView(sel)}
+  else if(d.copy!==undefined){const q=sel.q[+d.copy],f=box.querySelector(`[data-flag="${d.copy}"]`);f.textContent=`Copied. Paste it in ${F.thread} in Claude.`;copy(promptFor(q,sel),f)}
+  else if(d.done!==undefined){const q=sel.q[+d.done],f=box.querySelector(`[data-flag="${d.done}"]`);f.textContent=`Copied. Paste it in ${F.thread} and add what you did.`;copy(`Quest ${q.n} (${q.t}): I did my part. Here is what I did: `,f)}
+  else if(d.replay){seen={};tipsOff=false;placesSeen=0;save();closeSide();tip('start')}
+  else if(d.a!==undefined){const ok=+d.a===sel.quiz.right;b.classList.add(ok?'right':'wrong');b.parentElement.querySelectorAll('[data-a]')[sel.quiz.right].classList.add('right');box.querySelector('[data-why]').hidden=false}
+  else if(d.tipnext){tipNext()}
+  else if(d.show){$('#dlg').hidden=true;changesView('new')}
+  else if(d.skiptips){tipsOff=true;save();$('#dlg').hidden=true}}
+$('#side').addEventListener('click',clicks);$('#dlg').addEventListener('click',clicks);
+
+/* ---------- first-play tips: one at a time, each shown once, at the moment it is relevant ---------- */
+let seen={}, tipsOff=false, placesSeen=0;
+try{const s=JSON.parse(localStorage.getItem('twoshores-tips')||'{}');seen=s.seen||{};tipsOff=!!s.off}catch(e){}
+const save=()=>{try{localStorage.setItem('twoshores-tips',JSON.stringify({seen,off:tipsOff}))}catch(e){}};
+const TIPS={
+ start:[COARSE?'This map is your family\'s money. Every building is a real account, duty, protection or goal. <b>Tap a place</b> and you walk there along the trails. Tap it again, or the yellow <b>Open</b> button, to open it.':'This map is your family\'s money. Every building is a real account, duty, protection or goal. <b>Walk with the arrow keys, or click a place</b> and you follow the trails there. Standing on a place, press <b>Enter</b> or click it to open it.',true],
+ start2:['A coloured <b>!</b> above a place means the next move there is yours: <b style="color:#ff4332">red</b> is most urgent, <b style="color:#f59a2f">orange</b> is this year, pale is later. <b>Your moves</b> at the top left lists them, most urgent first.',false],
+ fog:['Grey with a <b>?</b> is <b>fog</b>: something we do not know yet, or have not decided. Fog lifts when a quest here is decided. Nothing in the game decides a quest: you take it to Claude, and the map changes after the decision is written down.',false],
+ place:['You are standing on a place. Open it to see the real number, how old it is, and whose move its quest is. <b>Copy the prompt</b> there hands the quest to Claude in '+F.thread+'.',false],
+ wide:[`More controls: <b>− +</b> and <b>Whole map</b> at the top left, or scroll, pinch and drag the map. A <b>storm</b> at sea is a hard deadline: ${TAP} it to see what is due by then. The <b>blimp</b> shows your net worth. <b>All decided</b> and <b>All done</b> above the map preview where this is heading.`,false]};
+let pending=null;
+function tip(k){ if(tipsOff)return;
+  if(k==='place'||k==='fog'){placesSeen++; if(seen[k]){ if(placesSeen>=3&&!seen.wide){k='wide'} else return } else {pending=k; return void setTimeout(()=>{ if(pending===k&&!seen[k]&&!tipsOff&&sel&&!hero.path.length&&$('#side').hidden){seen[k]=1;save();say('guide',TIPS[k][0])}},1200)} }
+  if(k==='walked')return;
+  if(seen[k])return; seen[k]=1;save(); say('guide',TIPS[k][0],TIPS[k][1])}
+function tipNext(){seen.start2=1;save();say('guide',TIPS.start2[0])}
+
+/* ---------- input ---------- */
+const placeAt=(tx,ty)=>P.find(p=>Math.abs(p.x-tx)<=1&&ty>=p.y-(urg(p)>=0?2:1)&&ty<=p.y+1);
+function mapClick(tx,ty){
+  /* places first, so a storm cloud or the blimp drifting over a place never steals its click */
+  const p=placeAt(tx,ty);
+  if(p){goTo(p);return} /* a place you clicked opens when you get there */
+  if(frame==='today'){const st=STORMS.find(st=>{const s=stormPos(st);return tx>=s.x-2&&tx<=s.x+3&&ty>=s.y-1&&ty<=s.y+3});if(st){stormView(st);return}}
+  const bl=blimp(); if(Math.abs(bl.x+.5-tx)<=2.5&&Math.abs(bl.y-ty)<=2){blimpView();return}
+  let best=null,bd=9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const d=Math.abs(dx)+Math.abs(dy);if(d<bd&&walk(tx+dx,ty+dy)){bd=d;best=[tx+dx,ty+dy]}}
+  if(best){const [hx,hy]=here();const path=bfs(hx,hy,best[0],best[1]);if(path){hero.path=path;hero.auto=false;sel=null;$('#dlg').hidden=true;labels()}}}
+cv.addEventListener('click',e=>{if(dragged){dragged=false;return}const r=cv.getBoundingClientRect();mapClick(Math.floor(cam.x+(e.clientX-r.left)/r.width*cam.w),Math.floor(cam.y+(e.clientY-r.top)/r.height*cam.h))});
+/* a label takes a click only where no building is under it */
+$('#labels').addEventListener('click',e=>{const l=e.target.closest('[data-p]');if(!l)return;const r=cv.getBoundingClientRect(),tx=Math.floor(cam.x+(e.clientX-r.left)/r.width*cam.w),ty=Math.floor(cam.y+(e.clientY-r.top)/r.height*cam.h);goTo(placeAt(tx,ty)||byId[l.dataset.p])});
+addEventListener('keydown',e=>{const k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if((e.key==='Enter'||e.key===' ')&&document.activeElement.tagName!=='BUTTON'&&$('#side').hidden){
+    if(!$('#dlg').hidden){e.preventDefault();$('#dlg .act').click();return}
+    const p=near();if(p&&!hero.path.length){e.preventDefault();select(p)}return}
+  if(!$('#side').hidden)return;
+  if(e.key==='+'||e.key==='='){zoomBy(1);return} if(e.key==='-'){zoomBy(-1);return}
+  if(!k||!$('#side').hidden)return; e.preventDefault(); step(k[0],k[1])});
+/* d-pad: one step per press, and it keeps walking while held */
+document.querySelectorAll('.dpad button').forEach(b=>{const [x,y]=b.dataset.d.split(',').map(Number);let t=0;const stop=()=>{clearInterval(t);t=0};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();step(x,y);stop();t=setInterval(()=>{if(!hero.path.length&&walk(hero.x+x,hero.y+y))step(x,y)},60)});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,stop));
+  b.addEventListener('click',e=>{if(e.detail===0)step(x,y)})});
+$('#zoom').addEventListener('click',()=>{pan={x:0,y:0};setZoom(whole?(lastZi>0?lastZi:1):0);draw();labels()});
+$('#zin').addEventListener('click',()=>zoomBy(1));$('#zout').addEventListener('click',()=>zoomBy(-1));
+/* wheel and pinch zoom, drag to look around */
+let dragged=false,wheelAcc=0,wheelAt=0;let pinch0=0;
+/* one zoom step per wheel notch, and at most four a second, so a trackpad swipe does not run through every level */
+cv.addEventListener('wheel',e=>{e.preventDefault();wheelAcc+=e.deltaY;const now=performance.now();if(Math.abs(wheelAcc)>=(e.ctrlKey?14:100)&&now-wheelAt>240){const r=cv.getBoundingClientRect(),ax=(e.clientX-r.left)/r.width,ay=(e.clientY-r.top)/r.height,tx=cam.x+ax*cam.w,ty=cam.y+ay*cam.h;zoomBy(wheelAcc<0?1:-1);pan.x+=tx-(cam.x+ax*cam.w);pan.y+=ty-(cam.y+ay*cam.h);draw();labels();wheelAcc=0;wheelAt=now}else if(now-wheelAt<=240&&Math.abs(wheelAcc)>300)wheelAcc=0},{passive:false});
+const spread=()=>{const [a,b]=[...pts.values()];return Math.hypot(a.x-b.x,a.y-b.y)};
+cv.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY});if(pts.size===2)pinch0=spread();dragged=false});
+cv.addEventListener('pointermove',e=>{const p=pts.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(pts.size===2){const d=spread();dragged=true;if(d>pinch0*1.3){zoomBy(1);pinch0=d}else if(d<pinch0/1.3){zoomBy(-1);pinch0=d}return}
+  if(!dragged&&Math.hypot(e.clientX-p.x0,e.clientY-p.y0)<7)return;
+  if(!dragged){dragged=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}}
+  pan.x-=dx/(z*T);pan.y-=dy/(z*T);draw();labels()});
+['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,e=>{pts.delete(e.pointerId)}));
+$('#open').addEventListener('click',()=>{const p=near();if(p)select(p)});$('#blimp').addEventListener('click',blimpView);$('#moves').addEventListener('click',()=>{listView();openSide()});
+$('#chg').addEventListener('click',()=>changesView('new'));
+$('#veil').addEventListener('click',()=>closeSide());
+$('#compass').addEventListener('click',()=>{const m=compassQ();if(m)goTo(m.p)});
+$('#next').addEventListener('click',()=>{const m=compassQ();if(m)goTo(m.p)});
+/* after a map button, the keyboard goes back to the map, so Enter opens the place and does not press the button again */
+$('.stagebar').addEventListener('click',()=>setTimeout(()=>{if($('#side').hidden)toMap()},0));
+[['today','#f-today'],['sprint','#f-sprint'],['end','#f-end']].forEach(([f,id])=>$(id).addEventListener('click',()=>{frame=f;document.querySelectorAll('.frames button').forEach(b=>b.setAttribute('aria-pressed',b.id===id.slice(1)));hud();if(!$('#side').hidden&&sel)cardView(sel);else if(!$('#side').hidden)listView();layout();draw();labels()}));
+/* Escape and Backspace close text. Handled first and kept from the host page, which can otherwise take the keyboard away. */
+window.addEventListener('keydown',e=>{const typing=/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&!document.activeElement.readOnly;
+  if(e.key==='Escape'||(e.key==='Backspace'&&!typing)){ if($('#side').hidden&&$('#dlg').hidden){if(e.key==='Escape'&&hero.path.length>1){hero.auto=false;hero.path.length=1}return} e.preventDefault();e.stopImmediatePropagation();$('#dlg').hidden=true;closeSide()}},true);
+/* if the keyboard leaves the game frame anyway, try to take it back, and say so when the browser refuses */
+addEventListener('blur',()=>setTimeout(()=>{try{window.focus()}catch(e){} if(!document.hasFocus()&&matchMedia('(hover:hover) and (pointer:fine)').matches)$('#kbd').hidden=false},60));
+addEventListener('focus',()=>{$('#kbd').hidden=true});
+$('#stage').addEventListener('pointerenter',()=>{if($('#side').hidden)toMap()});$('#dlg').addEventListener('click',()=>setTimeout(()=>{if($('#dlg').hidden)toMap()},0));
+addEventListener('resize',()=>{layout();draw();labels()});
+(function dprWatch(){matchMedia(`(resolution:${window.devicePixelRatio||1}dppx)`).addEventListener('change',()=>{layout();draw();labels();dprWatch()},{once:true})})();
+/* the map box can change size without the window changing (the preview bar, the header wrapping) */
+if(window.ResizeObserver){let sw=0,sh=0;new ResizeObserver(()=>{const st=$('#stage');if(st.clientWidth!==sw||st.clientHeight!==sh){sw=st.clientWidth;sh=st.clientHeight;layout();draw();labels()}}).observe($('#stage'))}
+
+function welcome(){const ev=unseen();if(!ev.length||!seen.start||!$('#dlg').hidden)return;
+  const cs=inRange('new'),top=ORDER.filter(k=>ev.some(e=>e.k===k)).slice(0,3).map(k=>{const n=ev.filter(e=>e.k===k).length;return `<b>${n}</b> ${n===1?KIND[k][1]:KIND[k][2]}`});
+  say('guide',`Welcome back. ${seenAt?'Since your last look':'This week'}: ${top.join(', ')}. A gold <b>+</b> marks each place that changed.`);
+  $('#dlg .row').innerHTML='<button class="act" data-show="1">See what changed</button><button class="act ghost" data-close="1">Later</button>'}
+function start(){hud();chgBadge();layout();listView();draw();labels();requestAnimationFrame(loop);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(labels);tip('start');welcome()}
+/* Ask Claude: the page asks Claude directly, on your own Claude account, with the whole map as context.
+   Claude here can explain and suggest. It changes nothing: the map changes only in the agent's own thread. */
+let sampleFn=null, chat=[], askCtl=null, askFocus=null;
+const MAPRULES=`How the map works. Places are parts of the family's finances; quests are tickets in the Finance repo.
+A place's status: In fog (not known or not decided), Sighted (known, no current document confirms it), Mapped (a statement backs the number), Decided (every quest there has a dated decision written down), Done (in place and running by itself, automation included). A place is only as far along as its least advanced quest, and a quest counts as decided only when its whole Answer is written with a date, so partial progress inside one quest does not show.
+Colour on a place shows urgency of ${F.player}'s own moves there: red = the nearest hard deadline (tier 0), orange = next (tier 1), pale = later. A gold + means something changed since ${F.player} last looked.
+A storm sits near a place while any quest due by the storm's date is still open (not decided). It clears when every such quest is decided or done.
+Turn: "you" = ${F.player}'s move; "claude" = Claude's move (the ${F.agent} agent); "wait" = waiting on someone named in "who"; "done".
+Quests marked decided are no longer open, even if the real-world action happens later.`;
+function mapData(){return JSON.stringify({today:new Date().toISOString().slice(0,10),storms:STORMS.map(s=>({at:s.at,what:s.what,date:s.date})),
+  places:P.map(p=>({id:p.id,name:p.name,land:p.land,what:p.what,status:statusOf(p),value:p.val,source:p.src,
+    quests:p.q.map(q=>({n:q.n,title:q.t,state:q.state,turn:q.turn,who:q.who||undefined,tier:q.tier,next:q.next,clock:q.due||'none',blockedBy:q.blk&&q.blk.length?q.blk:undefined}))}))})}
+function askRules(p){return `You are Claude, the ${F.agent} agent for ${F.name}, answering ${F.player} inside "${F.title}", a game map of the family's finances that is built from the ${F.agent} repo's tickets.
+${MAPRULES}
+Answer ${F.player}'s question about the map. Rules: plain, warm, short (under 180 words unless asked for more); speak to ${F.player} as "you"; name quests by number and title; say concretely what would change the map and who does it. Use only the data below; if it cannot answer, say what you would need. You cannot change anything from here: to act, ${F.player} pastes your answer or the ask into ${F.thread}. Never invent amounts or dates. Use simple Markdown only: short paragraphs, "- " bullets, **bold**.
+${p?`${F.player} is looking at the place "${p.name}" (id ${p.id}).
+`:''}The map right now (JSON):
+${mapData()}`}
+function md(t){const e=esc(t).replace(/\*\*(.+?)\*\*/g,(m,b)=>'<b>'+b+'</b>');const out=[];let ul=null;
+  e.split('\n').forEach(l=>{const m=l.match(/^\s*[-*•] (.*)/);if(m){if(!ul){ul=[];out.push(ul)}ul.push(m[1])}else{ul=null;if(l.trim())out.push(l)}});
+  return out.map(x=>Array.isArray(x)?`<ul>${x.map(i=>`<li>${i}</li>`).join('')}</ul>`:`<p>${x}</p>`).join('')}
+const ASKERR={rate_limited:'Claude is busy or you have hit a usage limit. Try again in a little while.',session_expired:'Sign in to Claude again, then ask.',refused:'Claude would not answer that one. Try asking it another way.',empty_completion:'No answer came back. Try a shorter question.'};
+function askView(p){askFocus=p||null;
+  const sug=p?[`Why is ${p.name} still ${ST[statusOf(p)].toLowerCase()}? What would move it forward?`,`What is my next move at ${p.name}?`]:(WORLD.ask?.suggest||['What are my three most important moves this week?']);
+  let h=`${XBTN}<div class="card"><div><h3>Ask Claude</h3><div style="color:var(--muted)">Claude sees the whole map as it is now: every place, quest and deadline${p?`, and that you are at ${esc(p.name)}`:''}. It explains and suggests. It changes nothing; changes happen in ${esc(F.thread)}. It uses your own Claude account.</div></div>`;
+  h+=`<div class="askbox" id="turns">${chat.map(t=>`<div class="turn ${t.role==='user'?'you':'cl'}"><div class="who">${t.role==='user'?'You':'Claude'}</div>${t.role==='user'?esc(t.content):md(t.content)}</div>`).join('')}</div>`;
+  h+=`<div class="askbox"><textarea id="askq" placeholder="Ask about any place, quest or deadline" aria-label="Your question"></textarea>
+   <div class="row"><button class="act" id="asksend">Ask</button><button class="act ghost" id="askstop" hidden>Stop</button>${chat.length?'<button class="act ghost" id="asknew">New conversation</button>':''}</div>
+   ${chat.length?'':`<div class="row">${sug.map(q=>`<button class="act ghost" data-sug="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}<div class="n" id="asknote"></div></div></div>`;
+  $('#side').innerHTML=h;openSide();const ta=$('#askq');
+  ta.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}if(e.key==='Escape'){e.preventDefault();closeSide()}});
+  $('#asksend').onclick=()=>ask();$('#askstop').onclick=()=>askCtl&&askCtl.abort();
+  if($('#asknew'))$('#asknew').onclick=()=>{chat=[];askView(askFocus)};
+  document.querySelectorAll('[data-sug]').forEach(b=>b.onclick=()=>{ta.value=b.dataset.sug;ask()});
+  setTimeout(()=>{try{ta.focus()}catch(e){}},0)}
+async function ask(){const ta=$('#askq'),q=ta&&ta.value.trim();if(!q||!sampleFn||askCtl)return;
+  chat.push({role:'user',content:q});ta.value='';
+  const turns=$('#turns'),you=document.createElement('div');you.className='turn you';you.innerHTML=`<div class="who">You</div>${esc(q)}`;turns.append(you);
+  const box=document.createElement('div');box.className='turn cl';box.innerHTML='<div class="who">Claude</div><p>Thinking…</p>';turns.append(box);
+  document.querySelectorAll('[data-sug]').forEach(b=>b.parentElement.remove());
+  box.scrollIntoView({block:'nearest'});askCtl=new AbortController();$('#asksend').disabled=true;$('#askstop').hidden=false;$('#asknote').textContent='';
+  const keep=chat.slice(-12);
+  try{const r=await sampleFn([{role:'user',content:askRules(askFocus)},{role:'assistant',content:'Understood. What would you like to know?'},...keep],
+      {cache:false,signal:askCtl.signal,onText:({text})=>{box.innerHTML='<div class="who">Claude</div>'+md(text)}});
+    chat.push({role:'assistant',content:r.text});if(r.truncated)$('#asknote').textContent='The answer was cut short. Ask for less at a time.'}
+  catch(e){const code=e&&e.code;
+    if(e&&e.text){box.innerHTML='<div class="who">Claude</div>'+md(e.text);chat.push({role:'assistant',content:e.text})}else{box.remove();chat.pop()}
+    if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){$('#ask').classList.remove('on');$('#asknote').textContent='Asking Claude is switched off for this page.'}
+    else if(code!=='cancelled')$('#asknote').textContent=ASKERR[code]||'Something went wrong on the way to Claude. Try again.'}
+  finally{askCtl=null;if($('#asksend')){$('#asksend').disabled=false;$('#askstop').hidden=true}}}
+$('#ask').addEventListener('click',()=>askView(sel&&!$('#side').hidden?sel:null));
+(async()=>{try{if(window.claude&&claude.use){sampleFn=await claude.use('sample');if(sampleFn)$('#ask').classList.add('on')}}catch(e){}})();
+window.twoShores={P,byId,walk,bfs,goTo,view:()=>({x:cam.x,y:cam.y,z,sel:sel&&sel.id})}; /* a handle for tests */
+start();
+})();
+
+</script>

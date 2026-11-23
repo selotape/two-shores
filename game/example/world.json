@@ -1,0 +1,248 @@
+{
+ "schema": 1,
+ "family": {
+  "title": "Two Shores",
+  "name": "the Carmel family",
+  "player": "Avi",
+  "agent": "Finance",
+  "thread": "the Finance chat",
+  "tz": "Asia/Jerusalem",
+  "turn": "avi"
+ },
+ "lands": [
+  {
+   "id": "IL",
+   "name": "ישראל",
+   "ground": "olive",
+   "south": {
+    "from": 26,
+    "ground": "desert"
+   },
+   "shapes": [
+    [
+     40,
+     19,
+     24,
+     13,
+     1
+    ],
+    [
+     26,
+     24,
+     8,
+     6,
+     1
+    ]
+   ]
+  }
+ ],
+ "map": {
+  "w": 80,
+  "h": 38,
+  "start": [
+   40,
+   19
+  ]
+ },
+ "blimp": {
+  "title": "כ־₪1.1M נטו",
+  "assets": [
+   [
+    "Pension and funds",
+    1350,
+    "₪1.35M",
+    "#199e70"
+   ],
+   [
+    "Brokerage",
+    500,
+    "₪500k",
+    "#3987e5"
+   ],
+   [
+    "Bank",
+    120,
+    "₪120k",
+    "#c0821a"
+   ]
+  ],
+  "debts": [
+   [
+    "Mortgage",
+    -900,
+    "₪900k",
+    "#e0563f"
+   ]
+  ],
+  "facts": [
+   [
+    "Not counted",
+    "the apartment's value"
+   ]
+  ],
+  "note": "An invented family, for testing."
+ },
+ "ask": {
+  "suggest": [
+   "מה המהלך הבא שלי?",
+   "What are my three most important moves this week?"
+  ]
+ },
+ "words": [],
+ "ignore": {},
+ "storms": [
+  {
+   "at": "tax",
+   "date": "2027-04-30",
+   "what": "annual report",
+   "dx": 1,
+   "dy": 0.4,
+   "min": 4
+  }
+ ],
+ "roads": [
+  [
+   "home",
+   [
+    40,
+    19
+   ]
+  ],
+  [
+   [
+    40,
+    19
+   ],
+   "bank"
+  ],
+  [
+   [
+    40,
+    19
+   ],
+   "pension"
+  ],
+  [
+   [
+    40,
+    19
+   ],
+   "tax"
+  ],
+  [
+   [
+    40,
+    19
+   ],
+   "broker"
+  ]
+ ],
+ "places": [
+  {
+   "id": "home",
+   "g": 1,
+   "x": 40,
+   "y": 19,
+   "kind": "home",
+   "land": "IL",
+   "name": "הבית בחיפה",
+   "what": "Home, owned with a mortgage",
+   "status": "mapped",
+   "val": "₪900k mortgage",
+   "asof": "2026-10-01",
+   "src": "bank statement",
+   "quests": [
+    {
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "bank",
+   "g": 1,
+   "x": 32,
+   "y": 15,
+   "kind": "bank",
+   "land": "IL",
+   "name": "חשבון עו״ש",
+   "what": "Checking",
+   "status": "mapped",
+   "val": "₪120k",
+   "asof": "2026-10-31",
+   "src": "statement",
+   "quests": [
+    {
+     "n": 2
+    }
+   ],
+   "learn": [
+    "A checking account is where pay arrives and bills leave."
+   ],
+   "sheet": [
+    {
+     "k": "Salary lands here",
+     "v": "All of it, for now",
+     "q": 2,
+     "decided": true
+    }
+   ]
+  },
+  {
+   "id": "pension",
+   "g": 1,
+   "x": 48,
+   "y": 14,
+   "kind": "vault",
+   "land": "IL",
+   "name": "קרן פנסיה",
+   "what": "Pension and study funds",
+   "status": "sighted",
+   "val": "₪1.35M",
+   "asof": "2025-12-31",
+   "src": "annual report",
+   "quests": [
+    {
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "tax",
+   "g": 1,
+   "x": 48,
+   "y": 24,
+   "kind": "post",
+   "land": "IL",
+   "name": "דוח שנתי 2026",
+   "what": "The annual tax report",
+   "status": "fog",
+   "val": "not filed",
+   "asof": "",
+   "src": "",
+   "quests": [
+    {
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "broker",
+   "g": 1,
+   "x": 32,
+   "y": 24,
+   "kind": "city",
+   "land": "IL",
+   "name": "Brokerage",
+   "what": "Index funds",
+   "status": "fog",
+   "val": "₪500k",
+   "asof": "2026-06-30",
+   "src": "statement",
+   "quests": [
+    {
+     "n": 2
+    }
+   ]
+  }
+ ]
+}
