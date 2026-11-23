@@ -188,7 +188,7 @@ textarea.fallback{width:100%;margin-top:6px;background:var(--ink);color:var(--te
       <div class="stage" id="stage">
         <canvas id="cv" tabindex="0" width="576" height="352" aria-label="Game map. Use arrow keys or tap to walk."></canvas>
         <div class="labels" id="labels"></div><button id="compass" hidden></button>
-        <div class="stagebar"><button id="moves">Your moves</button><button id="chg">What changed</button><button id="ask">Ask Claude</button><button id="next" hidden></button><button id="zout" aria-label="Zoom out">−</button><button id="zin" aria-label="Zoom in">+</button><button id="zoom">Whole map</button><button id="blimp">Blimp view</button></div>
+        <div class="stagebar"><button id="moves">Your moves</button><button id="chg">What changed</button><button id="ask">Ask Claude</button><button id="next" hidden></button><button id="zout" aria-label="Zoom out">−</button><button id="zin" aria-label="Zoom in">+</button><button id="zoom">Whole map</button><button id="blimp">Blimp view</button><button id="music" aria-pressed="true">♪ Music on</button></div>
         <div class="dlg" id="dlg" hidden></div>
         <button id="open" hidden></button>
         <div id="kbd" hidden>Click the map to use the keyboard</div>
@@ -780,6 +780,46 @@ $('#ask').addEventListener('click',()=>askView(sel&&!$('#side').hidden?sel:null)
 (async()=>{try{if(window.claude&&claude.use){sampleFn=await claude.use('sample');if(sampleFn)$('#ask').classList.add('on')}}catch(e){}})();
 window.twoShores={P,byId,walk,bfs,goTo,view:()=>({x:cam.x,y:cam.y,z,sel:sel&&sel.id})}; /* a handle for tests */
 start();
+/* ---------- music: an original, calm chiptune made live with Web Audio (no recordings) ----------
+   Two moods, picked by the land the hero stands on: 'major' (a warm I-vi-IV-V in C) and 'freygish'
+   (D, the Middle Eastern and klezmer scale). A land sets its mood with "music" in world.json;
+   grass lands default to major, other lands to freygish. Eight bars loop: the melody is seeded per bar,
+   so it repeats like a tune rather than wandering. Starts on the first tap or key; the button mutes it. */
+const MOODS={
+  major:{root:60,chords:[[0,'M'],[9,'m'],[5,'M'],[7,'M']],scale:[0,2,4,7,9],bpm:84},
+  freygish:{root:62,chords:[[0,'M'],[1,'M'],[10,'m'],[0,'M']],scale:[0,1,4,5,7,8,10],bpm:76}};
+const music=(()=>{let ac=null,out=null,echo=null,on=true,started=false,timer=0,next=0,step=0,mood='major';
+  try{on=localStorage.getItem('twoshores-music')!=='off'}catch(e){}
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  const moodHere=()=>{try{const [x,y]=here(),l=landAt(x,y);if(!l)return mood;const m=l.music||(groundOf(l,y)===GRASS?'major':'freygish');return MOODS[m]?m:mood}catch(e){return mood}};
+  const note=(t,m,dur,type,vol,dest,cut)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=hz(m);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
+    let n=o;if(cut){const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;o.connect(f);n=f}
+    n.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+.05)};
+  const rnd=s=>{s=Math.sin(s*12.9898)*43758.5453;return s-Math.floor(s)};
+  let last=0;
+  function bar(t,b){const M=MOODS[mood],spb=60/M.bpm,[cr,q]=M.chords[b%4],r=M.root+cr,tri=[0,q==='M'?4:3,7];
+    note(t,r-24,spb*1.9,'triangle',.5,out);note(t+2*spb,r-24+(b%2?7:0),spb*1.9,'triangle',.42,out);
+    for(let i=0;i<8;i++)note(t+i*spb/2,r+tri[[0,1,2,1,0,1,2,1][i]]+(i>3&&b%2?12:0),spb*.45,'square',.07,out,1400);
+    if(b===7&&step%16===15)return;
+    for(let i=0;i<4;i++){const s=rnd(b*7+i*3+(mood==='major'?1:5));if(s<.42)continue;
+      const tones=M.scale.map(x=>M.root+12+x).concat(tri.map(x=>r+12+x));let best=tones[0],bd=99;
+      const want=last+Math.round((rnd(b*11+i)-.5)*7);tones.forEach(m=>{const d=Math.abs(m-(last?want:r+19));if(d<bd){bd=d;best=m}});
+      last=best;note(t+i*spb,best,spb*(s>.85?1.8:.9),'triangle',.26,echo)}}
+  function tick(){if(!ac)return;while(next<ac.currentTime+.4){if(step%8===0)mood=moodHere();bar(next,step%8);next+=4*60/MOODS[mood].bpm;step++}}
+  function start(){if(started||!on)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}
+    if(!out){const v=ac.createGain();v.gain.value=.09;v.connect(ac.destination);out=v;
+      const d=ac.createDelay(),fb=ac.createGain(),w=ac.createGain();d.delayTime.value=.36;fb.gain.value=.28;w.gain.value=1;
+      echo=ac.createGain();echo.connect(out);echo.connect(d);d.connect(fb);fb.connect(d);d.connect(w);w.connect(out)}
+    ac.resume();started=true;mood=moodHere();next=ac.currentTime+.1;step=0;last=0;timer=setInterval(tick,100);tick()}
+  function stop(){started=false;clearInterval(timer);if(ac)ac.suspend()}
+  function label(){const b=$('#music');if(b){b.textContent=on?'♪ Music on':'♪ Music off';b.setAttribute('aria-pressed',on)}}
+  function toggle(){on=!on;try{localStorage.setItem('twoshores-music',on?'on':'off')}catch(e){}label();on?start():stop()}
+  const first=()=>{start();removeEventListener('pointerdown',first,true);removeEventListener('keydown',first,true)};
+  addEventListener('pointerdown',first,true);addEventListener('keydown',first,true);
+  document.addEventListener('visibilitychange',()=>{if(!ac||!started)return;document.hidden?ac.suspend():ac.resume()});
+  label();return {toggle,start,get on(){return on},get mood(){return mood},get playing(){return started}}})();
+$('#music').addEventListener('click',e=>{e.stopPropagation();music.toggle()});
 })();
 
 </script>
